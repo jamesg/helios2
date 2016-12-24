@@ -39,7 +39,7 @@ web/%.o:	web/%
 			$@
 
 slide:	main/slide.o ${BASE_OBJS}
-	${C++} ${C_FLAGS} ${CPP_FLAGS} -o $@ $+ ${LD_FLAGS}
+	${C++} ${LD_FLAGS} -o $@ $+
 
 %.o:	%.cpp
 	${C++} -c ${C_FLAGS} ${C_WARNINGS} ${CPP_FLAGS} -o $@ $<

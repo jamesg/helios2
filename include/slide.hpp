@@ -73,14 +73,22 @@ namespace slide
         // SET THE VALUE OF AN ATTRIBUTE BASED ON A VALUE READ FROM JSON DATA.
         //
 
+        void set_value(bool value, bool& out);
+        void set_value(double value, bool& out);
+        void set_value(int value, bool& out);
+        void set_value(std::string value, bool& out);
+
+        void set_value(bool value, double& out);
         void set_value(double value, double& out);
         void set_value(int value, double& out);
         void set_value(std::string value, double& out);
 
+        void set_value(bool value, int& out);
         void set_value(double value, int& out);
         void set_value(int value, int& out);
         void set_value(std::string value, int& out);
 
+        void set_value(bool value, std::string& out);
         void set_value(double value, std::string& out);
         void set_value(int value, std::string& out);
         void set_value(std::string value, std::string& out);
@@ -89,13 +97,16 @@ namespace slide
         // CONVERT AN ATOMIC VALUE TO A JSON STRING.
         //
 
-        void json_str(std::string str, std::ostringstream& oss);
+        void json_str(bool b, std::ostringstream& oss);
         void json_str(double d, std::ostringstream& oss);
+        void json_str(int d, std::ostringstream& oss);
+        void json_str(std::string str, std::ostringstream& oss);
 
         //
         // BIND VALUES TO A SQLITE STATEMENT.
         //
 
+        void bind_value(bool value, std::size_t index, sqlite3_stmt *stmt);
         void bind_value(double value, std::size_t index, sqlite3_stmt *stmt);
         void bind_value(int value, std::size_t index, sqlite3_stmt *stmt);
         void bind_value(std::string value, std::size_t index, sqlite3_stmt *stmt);
@@ -119,6 +130,7 @@ namespace slide
         // GET THE VALUE OF A COLUMN FROM A SQLITE RESULT SET.
         //
 
+        void get_column(sqlite3_stmt *stmt, std::size_t index, bool& value);
         void get_column(sqlite3_stmt *stmt, std::size_t index, double& value);
         void get_column(sqlite3_stmt *stmt, std::size_t index, int& value);
         void get_column(sqlite3_stmt *stmt, std::size_t index, std::string& value);
@@ -299,6 +311,14 @@ namespace slide
                                         std::string(js + tokens[token_i].start, js + tokens[token_i].end)
                                         );
                                     set<double, 0, Attributes...>(key, value);
+                                }
+                                else if(*(js + tokens[token_i].start) == 't')
+                                {
+                                    set<bool, 0, Attributes...>(key, true);
+                                }
+                                else if(*(js + tokens[token_i].start) == 'f')
+                                {
+                                    set<bool, 0, Attributes...>(key, false);
                                 }
                                 break;
                             case JSMN_STRING:

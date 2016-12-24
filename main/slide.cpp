@@ -37,6 +37,15 @@ SCENARIO("slide") {
             REQUIRE(r.get<0>() == "1");
         }
     }
+    GIVEN("a json object string with a boolean") {
+        auto r = slide::row<bool>::from_json<t1_id>(
+                "{ \"t1_id\": true }"
+                );
+
+        THEN("the string was parsed correctly") {
+            REQUIRE(r.get<0>() == true);
+        }
+    }
     GIVEN("a complex json object string") {
         const std::string json_str("{ \"t1_id\": \"1\", \"t2_id\": 2, \"aaa\": 123 }");
 
