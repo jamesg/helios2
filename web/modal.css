@@ -1,0 +1,69 @@
+/*
+ * Modal dialogs hide all content on the screen.
+ */
+
+.modal {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1040;
+}
+
+.modal-dialog {
+    position: fixed;
+    top: 0%;
+    left: 0%;
+    right: 0%;
+    width: auto;
+    z-index: 1050;
+    background-clip: padding-box;
+}
+
+.modal-content {
+    position: fixed;
+    top: 0%;
+    left: 0%;
+    right: 0%;
+    overflow: auto;
+    height: 80%;
+}
+
+.modal-button-box {
+    text-align: right;
+    position: fixed;
+    top: 80%;
+    left: 0%;
+    right: 0%;
+    width: auto;
+    z-index: 1050;
+}
+
+@media screen and (min-width: 800px) {
+    .modal-dialog {
+        top: 10%;
+        left: 24%;
+        right: 24%;
+    }
+
+    .modal-content {
+        top: 10%;
+        left: 24%;
+        right: 24%;
+        height: 70%;
+    }
+
+    .modal-button-box {
+        top: 80%;
+        left: 24%;
+        right: 24%;
+        width: auto;
+    }
+}
+
+.modal-help-button {
+    border: none;
+    float: right;
+    margin: 2px;
+}

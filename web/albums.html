@@ -1,0 +1,94 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Photograph Album - Albums</title>
+        <link rel="stylesheet" href="grid.css">
+        <link rel="stylesheet" href="modal.css">
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="teletype-theme.css">
+    </head>
+    <body>
+        <div id="modal-container"></div>
+        <h1>Photograph Album</h1>
+        <div class="grid">
+            <div class="col-1-4">
+                <a href="index.html">Home</a>
+            </div>
+        </div>
+        <div class="grid">
+            <div class="col-1-4">
+                <h2>Albums</h2>
+                <ul class="album-list" id="album-list"></ul>
+            </div>
+            <div class="col-3-4">
+                <h2>Photographs</h2>
+                <ul class="photograph-list" id="photograph-list"></ul>
+            </div>
+        </div>
+        <script src="jquery.js"></script>
+        <script src="underscore.js"></script>
+        <script src="backbone.js"></script>
+        <script src="views.js"></script>
+        <script src="modal.js"></script>
+        <script src="application.js"></script>
+        <script type="text/javascript">
+$(document).ready(
+        function() {
+            var albums = new AlbumCollection;
+            albums.fetch();
+            var photographs = new PhotographCollection;
+
+            if(window.location.hash) {
+                photographs.url = '/api/album_photograph/' + window.location.hash.substr(1);
+                photographs.fetch();
+            }
+
+            var photographsView = new CollectionView({
+                el: $('#photograph-list'),
+                model: photographs,
+                view: ThumbnailView
+            });
+            (new CollectionView({
+                    el: $('#album-list'),
+                    model: albums,
+                    view: AlbumView,
+                    initializeView: function(view) {
+                        view.on(
+                                'click',
+                                function() {
+                                    window.location.hash = '#' + this.model.id;
+                                    photographs.url = '/api/album_photograph/' + this.model.id;
+                                    photographs.fetch();
+                                }
+                                );
+                    }
+                }
+                )
+            ).render();
+
+            $('button[name=new-album]').click(
+                    function() {
+                        var album = new Album;
+                        (new Modal({
+                            view: AlbumFormView,
+                            model: album,
+                            buttons: [
+                                StandardButton.cancel(),
+                                StandardButton.save(
+                                    function() {
+                                        this.view.save();
+                                        this.remove();
+                                    }
+                                    )
+                            ]
+                        })).on('finished', function() { albums.fetch() });
+                    }
+                    );
+        }
+        );
+
+        </script>
+    </body>
+</html>
+

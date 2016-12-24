@@ -1,0 +1,110 @@
+.album-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.album {
+    cursor: pointer;
+    margin-left: 0;
+    padding: 0.6em;
+    width: 100%;
+}
+
+.album:hover {
+    background-color: #c7c7c7;
+}
+
+.album-address {
+    background-color: #b2ffa9;
+    border-radius: 3px;
+    margin-right: 1em;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
+.photograph-list {
+    width: 100%;
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.photograph-list li {
+    display: inline-block;
+    height: 200px;
+    width: 200px;
+    padding: 5px;
+    white-space: nowrap;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.photograph-list img {
+    max-width: 190px;
+    max-height: 190px;
+    margin: 0;
+    vertical-align: middle;
+}
+
+.vertical-align-helper {
+    display: inline-block;
+    height: 100%;
+    width: 0;
+    margin: 0;
+    vertical-align: middle;
+}
+
+.photograph-list li:hover {
+    background-color: #ddd;
+}
+
+.photograph-container {
+    background-color: #222;
+    padding: 1em;
+    width: 100%;
+}
+
+.back-link {
+    padding: 0.6em;
+}
+
+.back-link a {
+    color: white;
+    padding-bottom: 0.3em;
+    text-decoration: none;
+}
+
+.back-link a:hover {
+    border-bottom: 1px solid white;
+}
+
+.photograph {
+    text-align: center;
+    padding: 1em;
+    width: 100%;
+}
+
+.photograph-address {
+    margin-right: 1em;
+}
+
+.aligned-form label {
+    width: 40%;
+    display: inline-block;
+    float: left;
+    padding: 0.5em;
+}
+
+.hidden {
+    display: none;
+}
+
+input[type=number] {
+      -moz-appearance: textfield;
+}
+
+input[type=number], input[type=text], select {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    border-radius: 0.5em;
+}
+

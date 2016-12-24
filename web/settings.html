@@ -1,0 +1,35 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>DCC Controller - Settings</title>
+        <link rel="stylesheet" href="grid.css">
+        <link rel="stylesheet" href="modal.css">
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="teletype-theme.css">
+    </head>
+    <body>
+        <div id="modal-container"></div>
+        <h1>Settings</h1>
+        <a href="/">Home</a>
+        <div class="grid">
+            <div class="col-1-2">
+                <h2>Locomotives</h2>
+                <button name="new-locomotive">New</button>
+                <ul class="locomotive-list" id="locomotive-list"></ul>
+            </div>
+            <div class="col-1-2">
+                <h2>Accessories</h2>
+                <button name="new-accessory">New</button>
+                <ul class="accessory-list" id="accessory-list"></ul>
+            </div>
+        </div>
+        <script src="jquery.js"></script>
+        <script src="underscore.js"></script>
+        <script src="backbone.js"></script>
+        <script src="views.js"></script>
+        <script src="modal.js"></script>
+        <script src="application.js"></script>
+    </body>
+</html>
+

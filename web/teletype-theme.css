@@ -1,0 +1,86 @@
+body {
+    background-color: white;
+    font-family: 'Monospace';
+    margin: 0;
+    padding: 0;
+}
+
+/*
+ * Modal dialogs hide all content on the screen.
+ */
+
+/*
+ * Use a repeating pattern to create a 'false translucency'.  This works well
+ * when multiple dialogs are stacked.
+ */
+.modal {
+    background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVQImWO4e/fufwYYuHv37n8AQDgHLf1vMaoAAAAASUVORK5CYII=) repeat;
+}
+
+.modal-content {
+    background-color: #eee;
+    border: 1px solid black;
+    border-bottom: none;
+    padding: 1em;
+    /*border-radius: 6px;*/
+    outline: none;
+    /*box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);*/
+}
+
+.modal-button-box {
+    background-color: #eee;
+    border: 1px solid black;
+    border-top: none;
+    padding: 1em;
+}
+
+/*
+ * Form styles.
+ */
+
+div.aligned div.group {
+}
+
+div.aligned div.group label {
+}
+
+div.aligned div.group input, div.aligned div.group textarea {
+}
+
+button, input, select, textarea {
+    background-color: white;
+    border: 1px solid black;
+}
+
+button {
+    border-radius: 5px;
+}
+
+.button-box {
+}
+
+span.disabled {
+    color: lightgrey;
+}
+
+.navigation-pages {
+    background-color: #ddd;
+    color: black;
+}
+
+.navigation-breadcrumbs {
+    background-color: #ddd;
+    color: darkgrey;
+}
+
+.navigation-breadcrumbs a {
+    color: darkgrey;
+}
+
+.navigation-breadcrumbs > :last-child {
+    color: black;
+}
+
+.navigation-breadcrumbs > :last-child a {
+    color: black;
+}

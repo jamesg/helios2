@@ -1,0 +1,39 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Photograph Album - Photograph</title>
+        <link rel="stylesheet" href="grid.css">
+        <link rel="stylesheet" href="modal.css">
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="teletype-theme.css">
+    </head>
+    <body>
+        <div id="modal-container"></div>
+        <div class="grid">
+            <div class="col-4-4 photograph-container">
+                <span class="back-link"><a href="albums.html">Back to albums</a></span>
+                <div class="photograph" id="photograph-view"></div>
+            </div>
+        </div>
+        <script src="jquery.js"></script>
+        <script src="underscore.js"></script>
+        <script src="backbone.js"></script>
+        <script src="views.js"></script>
+        <script src="modal.js"></script>
+        <script src="application.js"></script>
+        <script type="text/javascript">
+$(document).ready(
+        function() {
+            var photograph = new Photograph({ id: window.location.hash.substr(1) });
+            console.log('photograph id', photograph.id);
+            console.log('has', window.location.hash);
+            photograph.fetch();
+            var photographView = new PhotographView({ el: $('#photograph-view'), model: photograph });
+        }
+        );
+
+        </script>
+    </body>
+</html>
+
