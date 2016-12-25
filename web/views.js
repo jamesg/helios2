@@ -130,9 +130,9 @@ var CollectionView = Backbone.View.extend(
 
             var filtered = _.filter(
                     this._views,
-                    function(view) {
+                    (function(view) {
                         return this.filter(view.model);
-                    },
+                    }).bind(this),
                     this
                     );
 

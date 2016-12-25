@@ -3,7 +3,6 @@ var Album = Backbone.Model.extend(
             defaults: {
                 name: ''
             },
-            //url: '/api/album'
             url: function() {
                 return this.isNew() ? '/api/album' : ('/api/album/' + this.id);
             }
@@ -86,7 +85,7 @@ var PhotographFormView = StaticView.extend(
             template: '<h1>Photograph</h1>' +
                 '<form class="aligned-form">' +
                 '<label for="title">Address</label><input type="text" name="title" value="<%=title%>"></input><br>' +
-                '<label for="taken">Date</label><input type="text" name="Date" value="<%-taken%>"></input><br>' +
+                '<label for="taken">Date</label><input type="text" name="taken" value="<%-taken%>"></input><br>' +
                 '<label for="location">Location</label><input type="text" name="location" value="<%-location%>"></input><br>' +
                 // TODO tags, albums
                 '<button type="submit" class="hidden"></button>' +
@@ -95,11 +94,6 @@ var PhotographFormView = StaticView.extend(
                 'click button': function() { this.save(); this.trigger('finished'); }
             },
             save: function() {
-                console.log('save',{
-                    title: this.$('[name=title]').val(),
-                    taken: this.$('[name=taken]').val(),
-                    location: this.$('[name=location]').val()
-                });
                 this.model.save(
                     {
                         title: this.$('[name=title]').val(),
@@ -107,10 +101,10 @@ var PhotographFormView = StaticView.extend(
                         location: this.$('[name=location]').val()
                     },
                     {
-                        success: function() {
-                            if(col)
-                                col.fetch();
-                        },
+                        //success: function() {
+                            //if(col)
+                                //col.fetch();
+                        //},
                         wait: true
                     }
                     );
@@ -122,7 +116,14 @@ var ThumbnailView = StaticView.extend(
         {
             tagName: 'li',
             className: 'thumbnail',
-            template: '<a href="/photograph.html#<%-id%>"><img src="/photograph/small/<%-id%>" alt="<%-title%>"></img><span class="vertical-align-helper"></span></a>',
+            template: '<a href="<%-targetUrl%>"><img src="/photograph/small/<%-id%>" alt="<%-title%>"></img><span class="vertical-align-helper"></span></a>',
+            templateParams: function() {
+                return {
+                    title: this.model.get('title'),
+                    targetUrl: this.targetUrl,
+                    id: this.model.id
+                };
+            },
             events: {
                 click: function() {
                     this.trigger('click')

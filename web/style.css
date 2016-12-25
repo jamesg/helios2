@@ -1,6 +1,26 @@
+h1 {
+    padding: 0.3em;
+}
+
+h2 {
+    padding: 0.3em;
+}
+
+.hide-expand-button {
+    position: fixed;
+    left: 1em;
+    bottom: 1em;
+}
+
 .album-list {
     list-style-type: none;
     padding-left: 0;
+    margin-bottom: 4em;
+}
+
+.album-list li span {
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .album {
@@ -28,21 +48,46 @@
     padding-left: 0;
 }
 
+.photograph-list-container {
+    background-color: #222;
+}
+
+.photograph-list {
+    text-align: center;
+}
+
 .photograph-list li {
     display: inline-block;
-    height: 200px;
-    width: 200px;
-    padding: 5px;
     white-space: nowrap;
     text-align: center;
     vertical-align: middle;
 }
 
 .photograph-list img {
-    max-width: 190px;
-    max-height: 190px;
     margin: 0;
     vertical-align: middle;
+}
+
+.photograph-list-large li {
+    height: 200px;
+    width: 200px;
+    padding: 5px;
+}
+
+.photograph-list-large img {
+    max-width: 190px;
+    max-height: 190px;
+}
+
+.photograph-list-small li {
+    height: 100px;
+    width: 100px;
+    padding: 5px;
+}
+
+.photograph-list-small img {
+    max-width: 90px;
+    max-height: 90px;
 }
 
 .vertical-align-helper {
@@ -54,7 +99,11 @@
 }
 
 .photograph-list li:hover {
-    background-color: #ddd;
+    background-color: #444;
+}
+
+.photograph-list li a {
+    color: white;
 }
 
 .photograph-container {
@@ -64,17 +113,26 @@
 }
 
 .back-link {
-    padding: 0.6em;
+    padding: 0.3em;
+}
+
+.photograph-container .back-link a {
+    color: white;
+}
+
+.photograph-container.back-link a:hover {
+    border-bottom: 1px solid white;
 }
 
 .back-link a {
-    color: white;
+    color: black;
     padding-bottom: 0.3em;
+    padding-top: 0.6em;
     text-decoration: none;
 }
 
 .back-link a:hover {
-    border-bottom: 1px solid white;
+    border-bottom: 1px solid black;
 }
 
 .photograph {

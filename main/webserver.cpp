@@ -287,7 +287,7 @@ namespace
     std::vector<unsigned char> get_small_jpeg(const int photograph_id)
     {
         if(!has_jpeg(photograph_id, "helios_jpeg_small"))
-            cache_jpeg(photograph_id, "helios_jpeg_small", 190, 142);
+            cache_jpeg(photograph_id, "helios_jpeg_small", 300, 200);
 
         return get_jpeg(photograph_id, "helios_jpeg_small");
     }
@@ -295,7 +295,7 @@ namespace
     std::vector<unsigned char> get_medium_jpeg(const int photograph_id)
     {
         if(!has_jpeg(photograph_id, "helios_jpeg_medium"))
-            cache_jpeg(photograph_id, "helios_jpeg_medium", 720, 480);
+            cache_jpeg(photograph_id, "helios_jpeg_medium", 960, 640);
 
         return get_jpeg(photograph_id, "helios_jpeg_medium");
     }
@@ -581,16 +581,24 @@ int main(const int argc, char * const argv[])
                         // TODO param should match id in JSON
                         slide::devoid(
                                 "UPDATE helios_photograph SET title = ?, "
-                                "WHERE address = ?",
+                                "taken = ? "
+                                "WHERE photograph_id = ?",
                                 slide::row<std::string, std::string, int>
                                     ::from_json<attr::title, attr::taken, attr::id>(data),
+                                database()
+                                );
+                        slide::devoid(
+                                "UPDATE helios_photograph_location SET location = ? "
+                                "WHERE photograph_id = ?",
+                                slide::row<std::string, int>
+                                    ::from_json<attr::location, attr::id>(data),
                                 database()
                                 );
                         return slide::get_row<int, std::string, std::string, std::string>(
                                 database(),
                                 "SELECT helios_photograph.photograph_id, title, taken, location FROM helios_photograph "
                                 "LEFT OUTER JOIN helios_photograph_location "
-                                "ON helios_photograph.photograph_id = helios_photograph_taken.photograph_id "
+                                "ON helios_photograph.photograph_id = helios_photograph_location.photograph_id "
                                 "WHERE helios_photograph.photograph_id = ? ",
                                 slide::row<int>::from_json<attr::id>(data)
                                 ).to_json<attr::id, attr::title, attr::taken, attr::location>();

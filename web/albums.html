@@ -10,20 +10,18 @@
     </head>
     <body>
         <div id="modal-container"></div>
-        <h1>Photograph Album</h1>
         <div class="grid">
-            <div class="col-1-4">
-                <a href="index.html">Home</a>
-            </div>
-        </div>
-        <div class="grid">
-            <div class="col-1-4">
-                <h2>Albums</h2>
+            <!--<h1>Photograph Album</h1>-->
+            <div id="list-column" class="col-1-4">
+                <div class="album-list-header">
+                    <span class="back-link"><a href="index.html">Home</a></span>
+                    <h2>Albums</h2>
+                </div>
+                <button name="hide-expand" class="hide-expand-button">&lt;&gt;</button>
                 <ul class="album-list" id="album-list"></ul>
             </div>
-            <div class="col-3-4">
-                <h2>Photographs</h2>
-                <ul class="photograph-list" id="photograph-list"></ul>
+            <div id="photograph-column" class="col-3-4 photograph-list-container">
+                <ul class="photograph-list photograph-list-large" id="photograph-list"></ul>
             </div>
         </div>
         <script src="jquery.js"></script>
@@ -35,6 +33,24 @@
         <script type="text/javascript">
 $(document).ready(
         function() {
+            $('button[name=hide-expand]').click(
+                function() {
+                    if($('#list-column').hasClass('col-1-4'))
+                    {
+                        $('#list-column').removeClass('col-1-4');
+                        $('#list-column').addClass('col-1-12');
+                        $('#photograph-column').removeClass('col-3-4');
+                        $('#photograph-column').addClass('col-11-12');
+                    }
+                    else
+                    {
+                        $('#list-column').removeClass('col-1-12');
+                        $('#list-column').addClass('col-1-4');
+                        $('#photograph-column').removeClass('col-11-12');
+                        $('#photograph-column').addClass('col-3-4');
+                    }
+                }
+                );
             var albums = new AlbumCollection;
             albums.fetch();
             var photographs = new PhotographCollection;
@@ -47,7 +63,13 @@ $(document).ready(
             var photographsView = new CollectionView({
                 el: $('#photograph-list'),
                 model: photographs,
-                view: ThumbnailView
+                view: ThumbnailView,
+                initializeView: function(view) {
+                    view.targetUrl = '/photograph.html#' + view.model.id + '.' + window.location.hash.substr(1);
+                }<!--,-->
+                <!--emptyView: StaticView.extend({-->
+                    <!--template: 'Choose an album to view photographs.'-->
+                <!--}-->)
             });
             (new CollectionView({
                     el: $('#album-list'),
@@ -58,6 +80,7 @@ $(document).ready(
                                 'click',
                                 function() {
                                     window.location.hash = '#' + this.model.id;
+                                    window.scrollTo(0, 0);
                                     photographs.url = '/api/album_photograph/' + this.model.id;
                                     photographs.fetch();
                                 }

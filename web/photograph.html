@@ -12,8 +12,9 @@
         <div id="modal-container"></div>
         <div class="grid">
             <div class="col-4-4 photograph-container">
-                <span class="back-link"><a href="albums.html">Back to albums</a></span>
+                <span class="back-link"><a href="albums.html" id="back-a">Back to album</a></span>
                 <div class="photograph" id="photograph-view"></div>
+                <ul class="photograph-list photograph-list-small" id="photograph-list"></ul>
             </div>
         </div>
         <script src="jquery.js"></script>
@@ -25,11 +26,43 @@
         <script type="text/javascript">
 $(document).ready(
         function() {
-            var photograph = new Photograph({ id: window.location.hash.substr(1) });
-            console.log('photograph id', photograph.id);
-            console.log('has', window.location.hash);
-            photograph.fetch();
+            var photograph = new Photograph();
+            var albumPhotographs = new PhotographCollection;
+
+            var photographId, albumId;
+
+            var hashChange = function() {
+                var params = window.location.hash.substr(1).split('.');
+                photographId = params[0];
+                albumId = params[1];
+                photograph.set('id', photographId);
+                photograph.fetch();
+                albumPhotographs.url = '/api/album_photograph/' + albumId;
+                albumPhotographs.fetch({ reset: true });
+            };
+
+            hashChange();
+            window.onhashchange = hashChange;
+
+            $('#back-a').attr('href', '/albums.html#' + albumId);
             var photographView = new PhotographView({ el: $('#photograph-view'), model: photograph });
+
+            (new CollectionView({
+                view: ThumbnailView,
+                el: $('#photograph-list'),
+                model: albumPhotographs,
+                initializeView: function(view) {
+                    view.targetUrl = '/photograph.html#' + view.model.id + '.' + albumId;
+                },
+                filter: function(model) {
+                    var middleIndex = _.findIndex(
+                            this.model.models,
+                            function(m) { return m.id == photograph.id; }
+                            );
+                    // Allow two thumbnails either side of this one.
+                    return (Math.abs(this.model.indexOf(model) - middleIndex) < 4);
+                }
+            })).render();
         }
         );
 
