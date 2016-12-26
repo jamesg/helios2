@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
@@ -525,7 +526,7 @@ namespace
 
         if(std::string(key) == "jpeg" && kind == MHD_POSTDATA_KIND)
         {
-            con->data_size = std::max(con->data_size, off + size);
+            con->data_size = std::max(con->data_size, static_cast<std::size_t>(off + size));
             con->jpeg_data.resize(con->data_size);
             std::memcpy((con->jpeg_data.data() + off), data, size);
         }
