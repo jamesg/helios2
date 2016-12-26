@@ -289,13 +289,16 @@ namespace slide
             {
                 if(tokens[token_i].type == JSMN_OBJECT)
                 {
-                    for(int i = 0; i < tokens[0].size; ++i)
+                    jsmntok_t *object_token = (tokens + token_i);
+                    for(int i = 0; i < object_token->size; ++i)
                     {
+                        // Move to the key.
                         ++token_i;
                         const std::string key_(
                                 js + tokens[token_i].start, js + tokens[token_i].end
                                 );
                         const std::string key = unescape(key_);
+                        // Move to the value.
                         ++token_i;
                         switch(tokens[token_i].type)
                         {
@@ -468,11 +471,11 @@ namespace slide
                 const char *js = json.c_str();
                 jsmn_parse(&parser, js, ::strlen(js), tokens, 256);
 
-                if(tokens[token_i].type == JSMN_ARRAY)
+                if(tokens[0].type == JSMN_ARRAY)
                 {
-                    ++token_i;
                     for(int i = 0; i < tokens[0].size; ++i)
                     {
+                        ++token_i;
                         row r;
                         r.template parse_object<Attributes...>(js, tokens, token_i);
                         out.push_back(r);
@@ -498,6 +501,15 @@ namespace slide
                 }
                 oss << " ]";
                 return oss.str();
+            }
+
+            template<std::size_t I>
+            void set_attr(const typename std::tuple_element<I, std::tuple<Types...>>::type& value)
+            {
+                //for(row<Types...>& r : *this)
+                    //r.get<I>() = value;
+                for(std::size_t i = 0; i < size(); ++i)
+                    at(i).template get<I>() = value;
             }
         private:
             internal_type m_vector;
@@ -868,6 +880,11 @@ namespace slide
     {
         return get_collection<Types...>(conn, query, row<>());
     }
+    /*
+     * Get the id of the last inserted row.  This will be the primary key for
+     * any relvar that has one.
+     */
+    int last_insert_rowid(connection&);
 }
 
 #endif
