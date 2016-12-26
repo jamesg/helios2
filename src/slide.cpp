@@ -212,10 +212,10 @@ int slide::last_insert_rowid(connection& db)
             &stmt,
             nullptr
             );
-    int step_ret = sqlite3_step(stmt);
+    /*int step_ret = */sqlite3_step(stmt);
     int rowid = 0;
     detail::get_column(stmt, 0, rowid);
-    int finalise_ret = sqlite3_finalize(stmt);
+    /*int finalise_ret = */sqlite3_finalize(stmt);
     //if(step_ret != SQLITE_DONE)
         //throw exception(
             //mkstr() << "stepping last_insert_rowid: " << sqlite3_errmsg(db.handle())
