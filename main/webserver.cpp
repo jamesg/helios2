@@ -299,6 +299,239 @@ namespace
 
         return get_jpeg(photograph_id, "helios_jpeg_medium");
     }
+
+    int postdata_iterator(
+            void *cls,
+            enum MHD_ValueKind kind,
+            const char *key,
+            const char *filename,
+            const char *content_type,
+            const char *transfer_encoding,
+            const char *data,
+            uint64_t off,
+            size_t size
+            );
+
+    class upload_function : public webserver::request_function
+    {
+        public:
+            /*
+             * Allow a match only when the URL and method match exactly.
+             */
+            int match_strength(const char *url, const char *method) override
+            {
+                return (std::string(url) == "/upload" && std::string(method) == "POST") ? 1 : -1;
+            }
+
+            struct connection_status
+            {
+                MHD_PostProcessor *post_processor;
+                std::string title, caption, location;
+                std::vector<unsigned char> jpeg_data;
+                std::size_t data_size;
+
+                connection_status() :
+                    post_processor(nullptr),
+                    data_size(0)
+                {
+                }
+            };
+
+            int operator()(
+                    void */*cls*/,
+                    struct MHD_Connection *connection,
+                    const char */*url*/,
+                    const char */*method*/,
+                    const char */*version*/,
+                    const char *upload_data,
+                    size_t *upload_data_size,
+                    void **con_cls
+                    ) override
+            {
+                connection_status *con = nullptr;
+
+                if(*con_cls == nullptr)
+                {
+                    // New connection.
+                    // There will be no POST data the first time this function is
+                    // called.
+                    con = new connection_status;
+                    *con_cls = (void*)con;
+
+                    con->post_processor = MHD_create_post_processor(
+                            connection,
+                            65536,
+                            postdata_iterator,
+                            *con_cls
+                            );
+                    return MHD_YES;
+                }
+
+                con = (connection_status*)(*con_cls);
+
+                if(*upload_data_size == 0)
+                {
+                    // Upload has finished.
+                    std::cerr << "data size " << con->data_size << std::endl;
+                    // Try to insert the photograph.
+                    std::string datetime;
+                    try
+                    {
+                        auto image = Exiv2::ImageFactory::open(
+                                (con->jpeg_data.data()),
+                                static_cast<long>(con->data_size)
+                                );
+                        image->readMetadata();
+                        Exiv2::ExifKey key("Exif.Photo.DateTimeOriginal");
+
+                        // Try to find the date key
+                        Exiv2::ExifData::iterator pos = image->exifData().findKey(
+                                Exiv2::ExifKey("Exif.Image.DateTimeOriginal")
+                                );
+                        if(pos == image->exifData().end())
+                            pos = image->exifData().findKey(
+                                    Exiv2::ExifKey("Exif.Image.DateTime")
+                                    );
+                        // If an acceptable key was found
+                        if(pos != image->exifData().end())
+                        {
+                            datetime = pos->getValue()->toString();
+                            std::cerr << "datetime " << datetime << std::endl;
+                        }
+
+                        if(datetime.length() < 19)
+                            throw std::runtime_error(
+                                    (slide::mkstr() <<
+                                         "datetime is of wrong length (" <<
+                                         datetime.length() <<
+                                         ", should be 19)").str().c_str()
+                                    );
+
+                        datetime[4] = '-';
+                        datetime[7] = '-';
+                        datetime[10] = 'T';
+                    }
+                    catch(const std::exception& e)
+                    {
+                        std::cerr << "warning: failed to get a date time from the image" << std::endl;
+                        std::cerr << e.what() << std::endl;
+                    }
+
+                    int photograph_id = 0;
+
+                    try
+                    {
+                        slide::transaction tr(database(), "insertphotograph");
+                        auto photograph = slide::row<std::string, std::string, std::string>::make_row(
+                                con->title,
+                                con->caption,
+                                datetime
+                                );
+                        slide::devoid(
+                                "INSERT INTO helios_photograph(title, caption, taken) "
+                                "VALUES(?, ?, ?) ",
+                                photograph,
+                                database()
+                                );
+                        photograph_id= slide::last_insert_rowid(database());
+                        std::cerr << "photograph id " << photograph_id << std::endl;
+                        auto photograph_location = slide::row<int, std::string>::make_row(
+                                photograph_id,
+                                con->location
+                                );
+                        std::cerr << "photograph_location " << con->location << std::endl;
+                        slide::devoid(
+                                "INSERT INTO helios_photograph_location(photograph_id, location) "
+                                "VALUES(?, ?) ",
+                                photograph_location,
+                                database()
+                                );
+                        sqlite3_stmt *stmt;
+                        sqlite3_prepare(
+                                database().handle(),
+                                "INSERT INTO helios_jpeg_data(photograph_id, data) VALUES (?, ?)",
+                                -1,
+                                &stmt,
+                                nullptr
+                                );
+                        sqlite3_bind_int(stmt, 1, photograph_id);
+                        sqlite3_bind_blob(
+                                stmt,
+                                2,
+                                con->jpeg_data.data(),
+                                static_cast<int>(con->data_size),
+                                SQLITE_TRANSIENT
+                                );
+                        sqlite3_step(stmt);
+                        sqlite3_finalize(stmt);
+                        tr.commit();
+                    }
+                    catch(const std::exception& e)
+                    {
+                        std::cerr << "error: inserting photograph into database: " << e.what() << std::endl;
+                        throw webserver::public_exception(
+                                "failed to insert photograph into database"
+                                );
+                    }
+
+                    MHD_destroy_post_processor(con->post_processor);
+                    delete con;
+
+                    struct MHD_Response *response = MHD_create_response_from_buffer(
+                            0,
+                            (void*)"",
+                            MHD_RESPMEM_MUST_COPY
+                            );
+                    MHD_add_response_header(
+                            response,
+                            "Location",
+                            (slide::mkstr() << "/photograph.html#" << photograph_id).str().c_str()
+                            );
+                    int ret = MHD_queue_response(connection, 303, response);
+                    MHD_destroy_response(response);
+                    return ret;
+                }
+
+                if(MHD_post_process(con->post_processor, upload_data, *upload_data_size) != MHD_YES)
+                    std::cerr << "post_process error" << std::endl;
+                *upload_data_size = 0;
+                return MHD_YES;
+            }
+        private:
+    };
+
+    int postdata_iterator(
+            void *cls,
+            enum MHD_ValueKind kind,
+            const char *key,
+            const char */*filename*/,
+            const char */*content_type*/,
+            const char */*transfer_encoding*/,
+            const char *data,
+            uint64_t off,
+            size_t size
+            )
+    {
+        upload_function::connection_status *con = (upload_function::connection_status*)cls;
+
+        if(std::string(key) == "title" && kind == MHD_POSTDATA_KIND)
+            con->title = std::string(data, size);
+
+        if(std::string(key) == "caption" && kind == MHD_POSTDATA_KIND)
+            con->caption = std::string(data, size);
+
+        if(std::string(key) == "location" && kind == MHD_POSTDATA_KIND)
+            con->location = std::string(data, size);
+
+        if(std::string(key) == "jpeg" && kind == MHD_POSTDATA_KIND)
+        {
+            con->data_size = std::max(con->data_size, off + size);
+            con->jpeg_data.resize(con->data_size);
+            std::memcpy((con->jpeg_data.data() + off), data, size);
+        }
+
+        return MHD_YES;
+    }
 }
 
 namespace rd_server
@@ -309,11 +542,13 @@ namespace rd_server
         //constexpr const char caption[] = "caption";
         constexpr const char taken[] = "taken";
         constexpr const char location[] = "location";
-        //constexpr const char data[] = "data";
         constexpr const char name[] = "name";
-        //constexpr const char tag[] = "tag";
-
+        constexpr const char tag[] = "tag";
         constexpr const char id[] = "id";
+
+        // Use photograph_id to differentiate from other ids in the same
+        // object.
+        constexpr const char photograph_id[] = "photograph_id";
     }
 }
 
@@ -455,6 +690,125 @@ int main(const int argc, char * const argv[])
                     )
                 )
             );
+    // Get the list of albums a photograph is in.
+    webserver::install_request_function(
+            webserver::request_function_ptr(
+                new webserver::text_request_function(
+                    "/api/photograph_album",
+                    "GET",
+                    [](const std::string& param, const std::string&) -> std::string
+                    {
+                        const int photograph_id = std::stoi(param);
+                        return slide::get_collection<int, std::string>(
+                                database(),
+                                "SELECT album_id, name FROM helios_album "
+                                "NATURAL JOIN helios_photograph_in_album "
+                                "WHERE photograph_id = ? "
+                                "ORDER BY name ",
+                                slide::row<int>::make_row(photograph_id)
+                                ).to_json<attr::id, attr::name>();
+                    }
+                    )
+                )
+            );
+    // Set the list of albums a photograph is in.
+    webserver::install_request_function(
+            webserver::request_function_ptr(
+                new webserver::text_request_function(
+                    "/api/photograph_album",
+                    "PUT",
+                    [](const std::string& param, const std::string& data) -> std::string
+                    {
+                        const int photograph_id = std::stoi(param);
+                        slide::transaction tr(database(), "albumphotograph");
+                        slide::devoid(
+                                "DELETE FROM helios_photograph_in_album "
+                                "WHERE photograph_id = ? ",
+                                slide::row<int>::make_row(photograph_id),
+                                database()
+                                );
+                        auto c = slide::collection<int, int>
+                            ::from_json<attr::photograph_id, attr::id>(data);
+                        c.set_attr<0>(photograph_id);
+                        slide::devoid(
+                                "INSERT INTO helios_photograph_in_album(photograph_id, album_id) "
+                                "VALUES(?, ?) ",
+                                c,
+                                database()
+                                );
+                        tr.commit();
+                        return slide::get_collection<int, std::string, int>(
+                                database(),
+                                "SELECT album_id, name, photograph_id FROM helios_album "
+                                "NATURAL JOIN helios_photograph_in_album "
+                                "WHERE photograph_id = ? "
+                                "ORDER BY name ",
+                                slide::row<int>::make_row(photograph_id)
+                                ).to_json<attr::id, attr::name, attr::photograph_id>();
+                    }
+                    )
+                )
+            );
+    // Get the list of tags applied to a photograph.
+    webserver::install_request_function(
+            webserver::request_function_ptr(
+                new webserver::text_request_function(
+                    "/api/photograph_tag",
+                    "GET",
+                    [](const std::string& param, const std::string&) -> std::string
+                    {
+                        const int photograph_id = std::stoi(param);
+                        return slide::get_collection<std::string>(
+                                database(),
+                                "SELECT tag FROM helios_photograph_tagged "
+                                "WHERE photograph_id = ? "
+                                "ORDER BY tag ",
+                                slide::row<int>::make_row(photograph_id)
+                                ).to_json<attr::tag>();
+                    }
+                    )
+                )
+            );
+    // Set the list of tags applied to a photograph.
+    webserver::install_request_function(
+            webserver::request_function_ptr(
+                new webserver::text_request_function(
+                    "/api/photograph_tag",
+                    "PUT",
+                    [](const std::string& param, const std::string& data) -> std::string
+                    {
+                        std::cerr << "update tags " << data << std::endl;
+                        const int photograph_id = std::stoi(param);
+                        slide::transaction tr(database(), "photographtagged");
+                        slide::devoid(
+                                "DELETE FROM helios_photograph_tagged "
+                                "WHERE photograph_id = ? ",
+                                slide::row<int>::make_row(photograph_id),
+                                database()
+                                );
+                        auto c = slide::collection<int, std::string>::from_json<attr::id, attr::tag>(data);
+                        c.set_attr<0>(photograph_id);
+                        for(slide::row<int, std::string> r : c)
+                            std::cerr << "row " << r.get<0>() << " " << r.get<1>() << std::endl;
+                        slide::devoid(
+                                "INSERT INTO helios_photograph_tagged(photograph_id, tag) "
+                                "VALUES(?, ?) ",
+                                c,
+                                database()
+                                );
+                        tr.commit();
+                        return slide::get_collection<std::string>(
+                                database(),
+                                "SELECT tag FROM helios_photograph_tagged "
+                                "WHERE photograph_id = ? "
+                                "ORDER BY tag ",
+                                slide::row<int>::make_row(photograph_id)
+                                ).to_json<attr::tag>();
+                    }
+                    )
+                )
+            );
+    // Get a list of photographs in an album.
     webserver::install_request_function(
             webserver::request_function_ptr(
                 new webserver::text_request_function(
@@ -473,6 +827,27 @@ int main(const int argc, char * const argv[])
                                 "ON helios_photograph.photograph_id = helios_photograph_in_album.photograph_id "
                                 "WHERE album_id = ?",
                                 slide::row<int>::make_row(album_id)
+                                ).to_json<attr::id, attr::title, attr::location, attr::taken>();
+                    }
+                    )
+                )
+            );
+    webserver::install_request_function(
+            webserver::request_function_ptr(
+                new webserver::text_request_function(
+                    "/api/album_photograph/uncategorised",
+                    "GET",
+                    [](const std::string&, const std::string&) -> std::string
+                    {
+                        return slide::get_collection<int, std::string, std::string, std::string>(
+                                database(),
+                                "SELECT helios_photograph.photograph_id, title, location, taken "
+                                "FROM helios_photograph "
+                                "LEFT OUTER JOIN helios_photograph_location "
+                                "ON helios_photograph.photograph_id = helios_photograph_location.photograph_id "
+                                "LEFT OUTER JOIN helios_photograph_in_album "
+                                "ON helios_photograph.photograph_id = helios_photograph_in_album.photograph_id "
+                                "WHERE album_id IS NULL"
                                 ).to_json<attr::id, attr::title, attr::location, attr::taken>();
                     }
                     )
@@ -693,6 +1068,9 @@ int main(const int argc, char * const argv[])
                     }
                     )
                 )
+            );
+    webserver::install_request_function(
+            webserver::request_function_ptr(new upload_function)
             );
 
     webserver::start_server(port);

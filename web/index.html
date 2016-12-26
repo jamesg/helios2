@@ -15,6 +15,15 @@
             <div class="col-1-4">
                 <a href="albums.html">Albums</a>
             </div>
+            <div class="col-3-4">
+                <form action="/upload" method="POST" enctype="multipart/form-data" class="aligned-form">
+                    <label for="title">Title</label><input type="text" name="title"></input><br>
+                    <label for="caption">Caption</label><input type="text" name="caption"></input><br>
+                    <label for="location">Location</label><input type="text" name="location"></input><br>
+                    <label for="jpeg">Image</label><input type="file" name="jpeg"></input><br>
+                    <button type="submit">Upload</button>
+                </form>
+            </div>
         </div>
         <script src="jquery.js"></script>
         <script src="underscore.js"></script>

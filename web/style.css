@@ -156,6 +156,10 @@ h2 {
     display: none;
 }
 
+button {
+    padding: 0.1em;
+}
+
 input[type=number] {
       -moz-appearance: textfield;
 }
@@ -164,5 +168,30 @@ input[type=number], input[type=text], select {
     margin-bottom: 1em;
     padding: 0.5em;
     border-radius: 0.5em;
+}
+
+.tag-list {
+    list-style-type: none;
+    padding-left: 0;
+    margin-bottom: 4em;
+}
+
+.tag-list li {
+    border-bottom: 1px solid silver;
+    padding: 1em;
+    width: 100%;
+}
+
+.tag-list li button {
+    visibility: hidden;
+    float: right;
+}
+
+.tag-list li:hover button {
+    visibility: visible;
+}
+
+.tag-list li:hover {
+    background-color: #c7c7c7;
 }
 

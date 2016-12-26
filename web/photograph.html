@@ -16,6 +16,20 @@
                 <div class="photograph" id="photograph-view"></div>
                 <ul class="photograph-list photograph-list-small" id="photograph-list"></ul>
             </div>
+            <div class="col-2-4">
+                <ul id="tag-list" class="tag-list"></ul>
+                <form id="add-tag-form">
+                    <input name="tag" type="text" autocomplete="off"></input>
+                    <button type="submit">Add</button>
+                </form>
+            </div>
+            <div class="col-2-4">
+                <ul id="album-list" class="album-list"></ul>
+                <form id="add-album-form">
+                    <select name="album" id="album-select"></select>
+                    <button type="submit">Add</button>
+                </form>
+            </div>
         </div>
         <script src="jquery.js"></script>
         <script src="underscore.js"></script>
@@ -28,6 +42,10 @@ $(document).ready(
         function() {
             var photograph = new Photograph();
             var albumPhotographs = new PhotographCollection;
+            var tags = new TagCollection;
+            var allAlbums = new AlbumCollection;
+            allAlbums.fetch();
+            var photographAlbums = new AlbumCollection;
 
             var photographId, albumId;
 
@@ -39,10 +57,27 @@ $(document).ready(
                 photograph.fetch();
                 albumPhotographs.url = '/api/album_photograph/' + albumId;
                 albumPhotographs.fetch({ reset: true });
+                tags.url = '/api/photograph_tag/' + photograph.id;
+                tags.fetch({ reset: true });
+                photographAlbums.url = '/api/photograph_album/' + photograph.id;
+                photographAlbums.fetch({ reset: true });
             };
 
             hashChange();
             window.onhashchange = hashChange;
+
+            (new CollectionView({
+                el: $('#album-select'),
+                model: allAlbums,
+                view: StaticView.extend({
+                    tagName: 'option',
+                    attributes: function() {
+                        console.log('attributes', this);
+                        return { value: this.model.id };
+                    },
+                    template: '<%-name%>'
+                })
+            })).render();
 
             $('#back-a').attr('href', '/albums.html#' + albumId);
             var photographView = new PhotographView({ el: $('#photograph-view'), model: photograph });
@@ -63,9 +98,63 @@ $(document).ready(
                     return (Math.abs(this.model.indexOf(model) - middleIndex) < 4);
                 }
             })).render();
+
+            (new CollectionView({
+                el: $('#tag-list'),
+                model: tags,
+                view: StaticView.extend({
+                    tagName: 'li',
+                    template: '<span class="tag"><%-tag%></span><button>Remove</button>',
+                    events: {
+                        'click button': function() {
+                            tags.remove(this.model);
+                            tags.sync('update', tags);
+                        }
+                    }
+                })
+            })).render();
+            $('#add-tag-form').submit(
+                    function(event) {
+                        event.preventDefault();
+                        var tag = $('input[name=tag]').val();
+                        console.log('add tag', tag);
+                        <!--if(tags.where({ tag: tag }) != [])-->
+                            <!--return;-->
+                        tags.add({ tag: tag });
+                        tags.sync('update', tags);
+                        <!--tags.fetch();-->
+                        $('input[name=tag]').val('');
+                        $('input[name=tag]').focus();
+                    }
+                    );
+
+            (new CollectionView({
+                el: $('#album-list'),
+                model: photographAlbums,
+                view: StaticView.extend({
+                    tagName: 'li',
+                    template: '<span class="album-name"><%-name%></span><button>Remove</button>',
+                    events: {
+                        'click button': function() {
+                            photographAlbums.remove(this.model);
+                            photographAlbums.sync('update', photographAlbums);
+                        }
+                    }
+                })
+            })).render();
+            $('#add-album-form').submit(
+                    function(event) {
+                        event.preventDefault();
+                        var albumId = $('select[name=album]').val();
+                        var album = allAlbums.find(function(model) { return model.id == albumId; });
+                        console.log(allAlbums);
+                        console.log('add album', albumId, album);
+                        photographAlbums.add(album);
+                        photographAlbums.sync('update', photographAlbums);
+                    }
+                    );
         }
         );
-
         </script>
     </body>
 </html>

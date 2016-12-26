@@ -11,9 +11,16 @@ var Album = Backbone.Model.extend(
 
 var AlbumCollection = Backbone.Collection.extend(
         {
+            idAttribute: 'id',
             model: Album,
             comparator: 'name',
-            url: '/api/album'
+            url: '/api/album',
+            add: function(model) {
+                console.log('add', model);
+                 return (this.any(function(model_) { console.log('test', model_); return model.id == model_.id })) ?
+                     false :
+                     Backbone.Collection.prototype.add.apply(this, arguments);
+            }
         }
         );
 
@@ -79,12 +86,26 @@ var PhotographCollection = Backbone.Collection.extend(
         }
         );
 
+var Tag = Backbone.Model.extend(
+        {
+            defaults: {
+                tag: ''
+            }
+        }
+        );
+
+var TagCollection = Backbone.Collection.extend(
+        {
+            model: Tag
+        }
+        );
+
 var PhotographFormView = StaticView.extend(
         {
             className: 'photograph-form',
             template: '<h1>Photograph</h1>' +
                 '<form class="aligned-form">' +
-                '<label for="title">Address</label><input type="text" name="title" value="<%=title%>"></input><br>' +
+                '<label for="title">Title</label><input type="text" name="title" value="<%=title%>"></input><br>' +
                 '<label for="taken">Date</label><input type="text" name="taken" value="<%-taken%>"></input><br>' +
                 '<label for="location">Location</label><input type="text" name="location" value="<%-location%>"></input><br>' +
                 // TODO tags, albums
