@@ -112,6 +112,17 @@ h2 {
     width: 100%;
 }
 
+.photograph-container img {
+    max-width: 80%;
+    max-height: 560px;
+}
+
+@media only screen and (min-height: 640px) {
+    .photograph-container img {
+        max-height: 640px;
+    }
+}
+
 .back-link {
     padding: 0.3em;
 }
