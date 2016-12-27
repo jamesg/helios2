@@ -44,14 +44,27 @@ WEB_DECLARE_STATIC(web_views_js)
 
 namespace
 {
-    std::string g_db_path = "rd.db";
+    std::string g_db_path = "";
+    static bool g_db_path_set = false;
+
+    void set_db_path(const std::string& db_path)
+    {
+        if(g_db_path_set)
+            return;
+        g_db_path = db_path;
+        g_db_path_set = true;
+    }
 
     slide::connection& database()
     {
-        static std::unique_ptr<slide::connection> g_conn;
+        if(!g_db_path_set)
+            throw std::runtime_error("db path not set");
+
+        static thread_local std::unique_ptr<slide::connection> g_conn;
         if(!g_conn)
             try
             {
+                //std::cerr << "open db connection" << std::endl;
                 g_conn.reset(new slide::connection(g_db_path));
             }
             catch(const std::exception&)
@@ -162,7 +175,7 @@ namespace
                 nullptr
                 );
         sqlite3_bind_int(stmt, 1, photograph_id);
-        if(sqlite3_step(stmt) != SQLITE_ROW)
+        if(slide::step(stmt) != SQLITE_ROW)
         {
             sqlite3_finalize(stmt);
             throw std::runtime_error("retrieving fullsize");
@@ -256,7 +269,7 @@ namespace
             sqlite3_finalize(stmt);
             throw std::runtime_error("image");
         }
-        sqlite3_step(stmt);
+        slide::step(stmt);
         sqlite3_finalize(stmt);
     }
 
@@ -272,7 +285,7 @@ namespace
                 nullptr
                 );
         sqlite3_bind_int(stmt, 1, photograph_id);
-        if(sqlite3_step(stmt) != SQLITE_ROW)
+        if(slide::step(stmt) != SQLITE_ROW)
         {
             sqlite3_finalize(stmt);
             throw std::runtime_error("retrieving jpeg data");
@@ -463,7 +476,7 @@ namespace
                                 static_cast<int>(con->data_size),
                                 SQLITE_TRANSIENT
                                 );
-                        sqlite3_step(stmt);
+                        slide::step(stmt);
                         sqlite3_finalize(stmt);
                         tr.commit();
                     }
@@ -557,7 +570,7 @@ int main(const int argc, char * const argv[])
 {
     using namespace rd_server;
 
-    uint16_t port = 8088;
+    uint16_t port = 4000;
 
     int option;
     while((option = getopt(argc, argv, "p:d:")) != -1)
@@ -578,7 +591,7 @@ int main(const int argc, char * const argv[])
                 break;
             case 'd':
                 if(optarg)
-                    g_db_path = optarg;
+                    set_db_path(optarg);
                 break;
         }
     }

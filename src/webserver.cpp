@@ -246,7 +246,7 @@ void webserver::start_server(uint16_t port)
 {
     if(g_daemon == nullptr)
         g_daemon = MHD_start_daemon(
-                MHD_USE_SELECT_INTERNALLY,
+                MHD_USE_THREAD_PER_CONNECTION,
                 port,
                 nullptr,
                 nullptr,
