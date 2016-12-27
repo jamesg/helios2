@@ -905,14 +905,14 @@ int main(const int argc, char * const argv[])
                     [](const std::string&, const std::string& data)
                     {
                         slide::devoid(
-                            "INSERT INTO helios_album(album_id, name) values(?, ?)",
-                            slide::row<int, std::string>::from_json<attr::id, attr::name>(data),
+                            "INSERT INTO helios_album(name) values(?)",
+                            slide::row<std::string>::from_json<attr::name>(data),
                             database()
                             );
                         return slide::get_row<int, std::string>(
                                 database(),
                                 "SELECT album_id, name FROM helios_album WHERE album_id = ? ",
-                                slide::row<int>::from_json<attr::id>(data)
+                                slide::row<int>::make_row(slide::last_insert_rowid(database()))
                                 ).to_json<attr::id, attr::name>();
                     }
                     )
