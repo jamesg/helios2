@@ -737,7 +737,10 @@ namespace slide
         std::string m_savepoint_name;
         bool m_released;
     };
-
+    /*
+     * Step a SQLite statement, converting error codes into exceptions.
+     */
+    int step(sqlite3_stmt *stmt);
     template <typename ...Types>
     int devoid(const std::string& query, const row<Types...>& values, connection& db)
     {
@@ -749,13 +752,14 @@ namespace slide
                     sqlite3_errmsg(db.handle())
             );
         detail::bind_values(values.std_tuple(), stmt);
-        int step_ret = sqlite3_step(stmt);
+        //int step_ret = sqlite3_step(stmt);
+        step(stmt);
         int finalise_ret = sqlite3_finalize(stmt);
-        if(step_ret != SQLITE_DONE)
-            throw exception(
-                mkstr() << "stepping devoid SQL query \"" << query <<
-                    "\": " << sqlite3_errmsg(db.handle())
-                );
+        //if(step_ret != SQLITE_DONE)
+            //throw exception(
+                //mkstr() << "stepping devoid SQL query \"" << query <<
+                    //"\": " << sqlite3_errmsg(db.handle())
+                //);
         if(finalise_ret != SQLITE_OK)
             throw exception(
                 mkstr() << "finalising devoid SQL query \"" << query <<
@@ -804,7 +808,7 @@ namespace slide
 
         row<Types...> out;
 
-        if(sqlite3_step(stmt) == SQLITE_ROW)
+        if(step(stmt) == SQLITE_ROW)
         {
             try
             {
@@ -853,7 +857,7 @@ namespace slide
 
         collection<Types...> out;
 
-        while(sqlite3_step(stmt) == SQLITE_ROW)
+        while(step(stmt) == SQLITE_ROW)
         {
             try
             {

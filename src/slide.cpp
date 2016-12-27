@@ -140,6 +140,28 @@ void slide::detail::json_str(std::string str, std::ostringstream& oss)
 {
     oss << "\"" << escape(str) << "\"";
 }
+int slide::step(sqlite3_stmt *stmt)
+{
+    int ret;
+    while(true)
+    {
+        ret = sqlite3_step(stmt);
+        switch(ret)
+        {
+            case SQLITE_DONE:
+            case SQLITE_ROW:
+            case SQLITE_OK:
+                return ret;
+            case SQLITE_BUSY:
+                sqlite3_sleep(100);
+                break;
+            case SQLITE_ERROR:
+                throw exception("stepping SQLite query");
+            default:
+                throw exception("unhandled SQLite return code");
+        }
+    }
+}
 int slide::devoid(const std::string& query, connection& db)
 {
     return devoid(query, row<>(), db);
