@@ -395,8 +395,8 @@ namespace slide
     class collection
     {
         public:
-            typedef row<Types...> row;
-            typedef typename std::vector<row> internal_type;
+            typedef row<Types...> row_type;
+            typedef typename std::vector<row_type> internal_type;
 
             collection()
             {
@@ -409,7 +409,7 @@ namespace slide
                 m_vector(c.m_vector)
             {
             }
-            collection(std::initializer_list<row> init) :
+            collection(std::initializer_list<row_type> init) :
                 m_vector(init)
             {
             }
@@ -438,15 +438,15 @@ namespace slide
             {
                 return m_vector.cend();
             }
-            row& at(std::size_t i)
+            row_type& at(std::size_t i)
             {
                 return m_vector.at(i);
             }
-            const row& at(std::size_t i) const
+            const row_type& at(std::size_t i) const
             {
                 return m_vector.at(i);
             }
-            void push_back(const row& r)
+            void push_back(const row_type& r)
             {
                 m_vector.push_back(r);
             }
@@ -476,7 +476,7 @@ namespace slide
                     for(int i = 0; i < tokens[0].size; ++i)
                     {
                         ++token_i;
-                        row r;
+                        row_type r;
                         r.template parse_object<Attributes...>(js, tokens, token_i);
                         out.push_back(r);
                     }
