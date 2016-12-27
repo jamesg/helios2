@@ -181,8 +181,8 @@ namespace
             throw std::runtime_error("retrieving fullsize");
         }
         std::vector<unsigned char> out(
-                (unsigned char*)sqlite3_column_blob(stmt, 0),
-                (unsigned char*)sqlite3_column_blob(stmt, 0) + sqlite3_column_bytes(stmt, 0)
+                reinterpret_cast<const unsigned char*>(sqlite3_column_blob(stmt, 0)),
+                reinterpret_cast<const unsigned char*>(sqlite3_column_blob(stmt, 0)) + sqlite3_column_bytes(stmt, 0)
                 );
         sqlite3_finalize(stmt);
         return out;
@@ -291,8 +291,8 @@ namespace
             throw std::runtime_error("retrieving jpeg data");
         }
         std::vector<unsigned char> out(
-                (unsigned char*)sqlite3_column_blob(stmt, 0),
-                (unsigned char*)sqlite3_column_blob(stmt, 0) + sqlite3_column_bytes(stmt, 0)
+                reinterpret_cast<const unsigned char*>(sqlite3_column_blob(stmt, 0)),
+                reinterpret_cast<const unsigned char*>(sqlite3_column_blob(stmt, 0)) + sqlite3_column_bytes(stmt, 0)
                 );
         sqlite3_finalize(stmt);
         return out;
@@ -491,9 +491,10 @@ namespace
                     MHD_destroy_post_processor(con->post_processor);
                     delete con;
 
+                    char response_data = 0;
                     struct MHD_Response *response = MHD_create_response_from_buffer(
                             0,
-                            (void*)"",
+                            &response_data,
                             MHD_RESPMEM_MUST_COPY
                             );
                     MHD_add_response_header(
