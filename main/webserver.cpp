@@ -554,7 +554,7 @@ namespace rd_server
     namespace attr
     {
         constexpr const char title[] = "title";
-        //constexpr const char caption[] = "caption";
+        constexpr const char caption[] = "caption";
         constexpr const char taken[] = "taken";
         constexpr const char location[] = "location";
         constexpr const char name[] = "name";
@@ -832,9 +832,9 @@ int main(const int argc, char * const argv[])
                     [](const std::string& param, const std::string&) -> std::string
                     {
                         const int album_id = std::stoi(param);
-                        return slide::get_collection<int, std::string, std::string, std::string>(
+                        return slide::get_collection<int, std::string, std::string, std::string, std::string>(
                                 database(),
-                                "SELECT helios_photograph.photograph_id, title, location, taken "
+                                "SELECT helios_photograph.photograph_id, title, caption, location, taken "
                                 "FROM helios_photograph "
                                 "LEFT OUTER JOIN helios_photograph_location "
                                 "ON helios_photograph.photograph_id = helios_photograph_location.photograph_id "
@@ -842,7 +842,7 @@ int main(const int argc, char * const argv[])
                                 "ON helios_photograph.photograph_id = helios_photograph_in_album.photograph_id "
                                 "WHERE album_id = ?",
                                 slide::row<int>::make_row(album_id)
-                                ).to_json<attr::id, attr::title, attr::location, attr::taken>();
+                                ).to_json<attr::id, attr::title, attr::caption, attr::location, attr::taken>();
                     }
                     )
                 )
@@ -854,16 +854,16 @@ int main(const int argc, char * const argv[])
                     "GET",
                     [](const std::string&, const std::string&) -> std::string
                     {
-                        return slide::get_collection<int, std::string, std::string, std::string>(
+                        return slide::get_collection<int, std::string, std::string, std::string, std::string>(
                                 database(),
-                                "SELECT helios_photograph.photograph_id, title, location, taken "
+                                "SELECT helios_photograph.photograph_id, title, caption, location, taken "
                                 "FROM helios_photograph "
                                 "LEFT OUTER JOIN helios_photograph_location "
                                 "ON helios_photograph.photograph_id = helios_photograph_location.photograph_id "
                                 "LEFT OUTER JOIN helios_photograph_in_album "
                                 "ON helios_photograph.photograph_id = helios_photograph_in_album.photograph_id "
                                 "WHERE album_id IS NULL"
-                                ).to_json<attr::id, attr::title, attr::location, attr::taken>();
+                                ).to_json<attr::id, attr::title, attr::caption, attr::location, attr::taken>();
                     }
                     )
                 )
@@ -946,15 +946,15 @@ int main(const int argc, char * const argv[])
                     [](const std::string& param, const std::string&)
                     {
                         if(param.length())
-                            return slide::get_row<int, std::string, std::string, std::string>(
+                            return slide::get_row<int, std::string, std::string, std::string, std::string>(
                                     database(),
-                                    "SELECT helios_photograph.photograph_id, title, location, taken "
+                                    "SELECT helios_photograph.photograph_id, title, caption, location, taken "
                                     "FROM helios_photograph "
                                     "LEFT OUTER JOIN helios_photograph_location "
                                     "ON helios_photograph.photograph_id = helios_photograph_location.photograph_id "
                                     "WHERE helios_photograph.photograph_id = ?",
                                     slide::row<int>::make_row(std::stoi(param))
-                                    ).to_json<attr::id, attr::title, attr::location, attr::taken>();
+                                    ).to_json<attr::id, attr::title, attr::caption, attr::location, attr::taken>();
                         else
                             throw webserver::public_exception("can't get all photographs");
                     }
@@ -971,10 +971,11 @@ int main(const int argc, char * const argv[])
                         // TODO param should match id in JSON
                         slide::devoid(
                                 "UPDATE helios_photograph SET title = ?, "
+                                "caption = ?, "
                                 "taken = ? "
                                 "WHERE photograph_id = ?",
-                                slide::row<std::string, std::string, int>
-                                    ::from_json<attr::title, attr::taken, attr::id>(data),
+                                slide::row<std::string, std::string, std::string, int>
+                                    ::from_json<attr::title, attr::caption, attr::taken, attr::id>(data),
                                 database()
                                 );
                         slide::devoid(

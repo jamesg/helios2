@@ -68,6 +68,7 @@ var Photograph = Backbone.Model.extend(
         {
             defaults: {
                 title: '',
+                caption: '',
                 location: '',
                 taken: ''
             },
@@ -106,6 +107,7 @@ var PhotographFormView = StaticView.extend(
             template: '<h1>Photograph</h1>' +
                 '<form class="aligned-form">' +
                 '<label for="title">Title</label><input type="text" name="title" value="<%=title%>"></input><br>' +
+                '<label for="caption">Caption</label><input type="text" name="caption" value="<%=caption%>"></input><br>' +
                 '<label for="taken">Date</label><input type="text" name="taken" value="<%-taken%>"></input><br>' +
                 '<label for="location">Location</label><input type="text" name="location" value="<%-location%>"></input><br>' +
                 // TODO tags, albums
@@ -158,7 +160,9 @@ var PhotographView = StaticView.extend(
             template: '<div class="photograph">' +
                 '<img src="/photograph/medium/<%-id%>" alt="<%-title%>"></img>' +
                 '</div>' +
-                '<h2><%-title%></h2><button name="edit">Edit</button><a href="/photograph/original/<%-id%>">Full size</a>',
+                '<h2><%-title%></h2><button name="edit">Edit</button><br>' +
+                '<span class="caption"><%-caption%></span><br>' +
+                '<span class="size-link"><a href="/photograph/original/<%-id%>">Full size</a></span>',
             events: {
                 'click button[name=edit]': function() {
                     (new Modal({

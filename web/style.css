@@ -123,12 +123,20 @@
     }
 }
 
+.size-link a {
+    color: #d7d7d7;
+}
+
 .photograph-container .back-link a {
     color: white;
 }
 
 .photograph-container.back-link a:hover {
     border-bottom: 1px solid white;
+}
+
+.photograph-container .caption {
+    color: white;
 }
 
 .back-link a {
