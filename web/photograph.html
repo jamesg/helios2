@@ -13,7 +13,7 @@
         <div class="grid">
             <div class="col-4-4 photograph-container">
                 <span class="back-link"><a href="albums.html" id="back-a">Back to album</a></span>
-                <div class="photograph" id="photograph-view"></div>
+                <div id="photograph-view"></div>
                 <ul class="photograph-list photograph-list-small" id="photograph-list"></ul>
             </div>
             <div class="col-2-4">
@@ -52,7 +52,7 @@ $(document).ready(
             var hashChange = function() {
                 var params = window.location.hash.substr(1).split('.');
                 photographId = params[0];
-                albumId = params[1];
+                albumId = coalesce(params[1], 'uncategorised');
                 photograph.set('id', photographId);
                 photograph.fetch();
                 albumPhotographs.url = '/api/album_photograph/' + albumId;

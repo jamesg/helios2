@@ -264,6 +264,8 @@ void webserver::stop_server()
     if(g_daemon == nullptr)
         return;
 
+    g_request_functions.clear();
+
     MHD_stop_daemon(g_daemon);
     g_daemon = nullptr;
 }

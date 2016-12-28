@@ -155,7 +155,10 @@ var ThumbnailView = StaticView.extend(
 
 var PhotographView = StaticView.extend(
         {
-            template: '<img src="/photograph/medium/<%-id%>" alt="<%-title%>"></img><br><button name="edit">Edit</button>',
+            template: '<div class="photograph">' +
+                '<img src="/photograph/medium/<%-id%>" alt="<%-title%>"></img>' +
+                '</div>' +
+                '<h2><%-title%></h2><button name="edit">Edit</button><a href="/photograph/original/<%-id%>">Full size</a>',
             events: {
                 'click button[name=edit]': function() {
                     (new Modal({

@@ -1024,44 +1024,20 @@ int main(const int argc, char * const argv[])
                     )
                 )
             );
-    //webserver::install_request_function(
-            //webserver::request_function_ptr(
-                //new webserver::text_request_function(
-                    //"/photograph/medium",
-                    //"GET",
-                    //[](const std::string& param, const std::string&)
-                    //{
-                    //},
-                    //"image/jpeg"
-                    //)
-                //)
-            //);
-    //webserver::install_request_function(
-            //webserver::request_function_ptr(
-                //new webserver::text_request_function(
-                    //"/api/photograph",
-                    //"POST",
-                    //[](const std::string&, const std::string& data)
-                    //{
-                        //try
-                        //{
-                            //auto r = slide::row<std::string>
-                                //::from_json<attr::title>(data);
-                            //slide::devoid(
-                                    //"INSERT INTO helios_photograph(title, taken) "
-                                    //"VALUES(?, ?) ",
-                                    //r,
-                                    //database()
-                                    //);
-                        //}
-                        //catch(const std::exception&)
-                        //{
-                            //throw;
-                        //}
-                    //}
-                    //)
-                //)
-            //);
+    webserver::install_request_function(
+            webserver::request_function_ptr(
+                new webserver::text_request_function(
+                    "/photograph/original",
+                    "GET",
+                    [](const std::string& param, const std::string&)
+                    {
+                        std::vector<unsigned char> jpeg = get_fullsize_jpeg(std::stoi(param));
+                        return std::string(reinterpret_cast<const char*>(jpeg.data()), jpeg.size());
+                    },
+                    "image/jpeg"
+                    )
+                )
+            );
     webserver::install_request_function(
             webserver::request_function_ptr(
                 new webserver::text_request_function(
@@ -1091,7 +1067,8 @@ int main(const int argc, char * const argv[])
     webserver::start_server(port);
 
     std::cerr << "Server started, press return to exit." << std::endl;
-    getchar();
+    std::cin.get();
+    std::cerr << "Shutting down..." << std::endl;
 
     webserver::stop_server();
 
