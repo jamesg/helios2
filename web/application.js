@@ -120,6 +120,7 @@ var PhotographFormView = StaticView.extend(
                 this.model.save(
                     {
                         title: this.$('[name=title]').val(),
+                        caption: this.$('[name=caption]').val(),
                         taken: this.$('[name=taken]').val(),
                         location: this.$('[name=location]').val()
                     },
