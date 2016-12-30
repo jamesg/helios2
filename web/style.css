@@ -127,6 +127,10 @@
     color: #d7d7d7;
 }
 
+.photograph-container h1,h2 {
+    color: white;
+}
+
 .photograph-container .back-link a {
     color: white;
 }
