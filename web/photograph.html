@@ -48,11 +48,19 @@ var PhotographView = StaticView.extend({
 var PhotographDetailsView = StaticView.extend({
     template:
         '<h2><%-title%></h2><button name="edit">Edit</button><br>' +
+        '<button name="starred" id="photograph-starred" class="<% if(starred) print("checked"); %>">Star</button><br>' +
         '<span class="caption"><%-caption%></span><br>' +
         '<span class="size-link">' +
         '<a href="/photograph/original/<%-id%>">Full size</a>' +
         '</span>',
     events: {
+        'click button[name=starred]': function() {
+            this.$('button[name=starred]').toggleClass('checked');
+                console.log('starred', this.$('button[name=starred]').hasClass('checked'));
+            this.model.save({
+                starred: this.$('button[name=starred]').hasClass('checked')
+            }, { wait: true});
+        },
         'click button[name=edit]': function() {
             (new Modal({
                 view: PhotographFormView,
@@ -118,7 +126,6 @@ $(document).ready(
             view: StaticView.extend({
                 tagName: 'option',
                 attributes: function() {
-                    console.log('attributes', this);
                     return { value: this.model.id };
                 },
                 template: '<%-name%>'
@@ -171,7 +178,6 @@ $(document).ready(
                 function(event) {
                     event.preventDefault();
                     var tag = $('input[name=tag]').val();
-                    console.log('add tag', tag);
                     <!--if(tags.where({ tag: tag }) != [])-->
                         <!--return;-->
                     tags.add({ tag: tag });
@@ -201,8 +207,6 @@ $(document).ready(
                     event.preventDefault();
                     var albumId = $('select[name=album]').val();
                     var album = allAlbums.find(function(model) { return model.id == albumId; });
-                    console.log(allAlbums);
-                    console.log('add album', albumId, album);
                     photographAlbums.add(album);
                     photographAlbums.sync('update', photographAlbums);
                 }

@@ -152,6 +152,15 @@ namespace
                 " ) ",
                 database()
                 );
+        slide::devoid(
+                "CREATE TABLE IF NOT EXISTS helios_photograph_starred ( "
+                " photograph_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
+                " FOREIGN KEY(photograph_id) "
+                " REFERENCES helios_photograph(photograph_id) "
+                " ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED "
+                ")",
+                database()
+                );
     }
 
     bool has_jpeg(const int photograph_id, const std::string& table)
@@ -559,6 +568,7 @@ namespace rd_server
         constexpr const char location[] = "location";
         constexpr const char name[] = "name";
         constexpr const char tag[] = "tag";
+        constexpr const char starred[] = "starred";
         constexpr const char id[] = "id";
 
         // Use photograph_id to differentiate from other ids in the same
@@ -627,23 +637,6 @@ int main(const int argc, char * const argv[])
                     )
                 )
             );
-
-            //new text_request_function(
-                //"/",
-                //"GET",
-                //[](const std::string param) {
-                    //std::cerr << "param " << param << std::endl;
-                    //return "<h1>Hello World</h1>";
-                //}
-                //)
-    //webserver::install_request_function(
-        //std::unique_ptr<webserver::request_function>(
-            //new webserver::static_request_function(
-                //"/",
-                //WEB_STATIC_STD_STRING(web_index_html)
-                //)
-            //)
-        //);
 
     install_static_request_function("/", WEB_STATIC_STD_STRING(web_index_html));
     install_static_request_function("/albums.html", WEB_STATIC_STD_STRING(web_albums_html));
@@ -832,17 +825,21 @@ int main(const int argc, char * const argv[])
                     [](const std::string& param, const std::string&) -> std::string
                     {
                         const int album_id = std::stoi(param);
-                        return slide::get_collection<int, std::string, std::string, std::string, std::string>(
+                        return slide::get_collection<int, std::string, std::string, std::string, std::string, bool>(
                                 database(),
-                                "SELECT helios_photograph.photograph_id, title, caption, location, taken "
+                                "SELECT helios_photograph.photograph_id, "
+                                " title, caption, location, taken, "
+                                " (helios_photograph_starred.photograph_id IS NOT NULL) AS starred "
                                 "FROM helios_photograph "
                                 "LEFT OUTER JOIN helios_photograph_location "
                                 "ON helios_photograph.photograph_id = helios_photograph_location.photograph_id "
                                 "JOIN helios_photograph_in_album "
                                 "ON helios_photograph.photograph_id = helios_photograph_in_album.photograph_id "
+                                "LEFT OUTER JOIN helios_photograph_starred "
+                                "ON helios_photograph.photograph_id = helios_photograph_starred.photograph_id "
                                 "WHERE album_id = ?",
                                 slide::row<int>::make_row(album_id)
-                                ).to_json<attr::id, attr::title, attr::caption, attr::location, attr::taken>();
+                                ).to_json<attr::id, attr::title, attr::caption, attr::location, attr::taken, attr::starred>();
                     }
                     )
                 )
@@ -854,16 +851,19 @@ int main(const int argc, char * const argv[])
                     "GET",
                     [](const std::string&, const std::string&) -> std::string
                     {
-                        return slide::get_collection<int, std::string, std::string, std::string, std::string>(
+                        return slide::get_collection<int, std::string, std::string, std::string, std::string, bool>(
                                 database(),
-                                "SELECT helios_photograph.photograph_id, title, caption, location, taken "
+                                "SELECT helios_photograph.photograph_id, title, caption, location, taken, "
+                                " (helios_photograph_starred.photograph_id IS NOT NULL) AS starred "
                                 "FROM helios_photograph "
                                 "LEFT OUTER JOIN helios_photograph_location "
                                 "ON helios_photograph.photograph_id = helios_photograph_location.photograph_id "
                                 "LEFT OUTER JOIN helios_photograph_in_album "
                                 "ON helios_photograph.photograph_id = helios_photograph_in_album.photograph_id "
+                                "LEFT OUTER JOIN helios_photograph_starred "
+                                "ON helios_photograph.photograph_id = helios_photograph_starred.photograph_id "
                                 "WHERE album_id IS NULL"
-                                ).to_json<attr::id, attr::title, attr::caption, attr::location, attr::taken>();
+                                ).to_json<attr::id, attr::title, attr::caption, attr::location, attr::taken, attr::starred>();
                     }
                     )
                 )
@@ -946,15 +946,18 @@ int main(const int argc, char * const argv[])
                     [](const std::string& param, const std::string&)
                     {
                         if(param.length())
-                            return slide::get_row<int, std::string, std::string, std::string, std::string>(
+                            return slide::get_row<int, std::string, std::string, std::string, std::string, bool>(
                                     database(),
-                                    "SELECT helios_photograph.photograph_id, title, caption, location, taken "
+                                    "SELECT helios_photograph.photograph_id, title, caption, location, taken, "
+                                    " (helios_photograph_starred.photograph_id IS NOT NULL) AS starred "
                                     "FROM helios_photograph "
                                     "LEFT OUTER JOIN helios_photograph_location "
                                     "ON helios_photograph.photograph_id = helios_photograph_location.photograph_id "
+                                    "LEFT OUTER JOIN helios_photograph_starred "
+                                    "ON helios_photograph.photograph_id = helios_photograph_starred.photograph_id "
                                     "WHERE helios_photograph.photograph_id = ?",
                                     slide::row<int>::make_row(std::stoi(param))
-                                    ).to_json<attr::id, attr::title, attr::caption, attr::location, attr::taken>();
+                                    ).to_json<attr::id, attr::title, attr::caption, attr::location, attr::taken, attr::starred>();
                         else
                             throw webserver::public_exception("can't get all photographs");
                     }
@@ -985,14 +988,34 @@ int main(const int argc, char * const argv[])
                                     ::from_json<attr::location, attr::id>(data),
                                 database()
                                 );
-                        return slide::get_row<int, std::string, std::string, std::string>(
+                        const slide::row<bool> starred =
+                            slide::row<bool>::from_json<attr::starred>(data);
+                        if(starred.get<0>())
+                            slide::devoid(
+                                    "INSERT INTO helios_photograph_starred(photograph_id) "
+                                    "VALUES(?)",
+                                    slide::row<int>::from_json<attr::id>(data),
+                                    database()
+                                    );
+                        else
+                            slide::devoid(
+                                    "DELETE FROM helios_photograph_starred "
+                                    "WHERE photograph_id = ?",
+                                    slide::row<int>::from_json<attr::id>(data),
+                                    database()
+                                    );
+                        return slide::get_row<int, std::string, std::string, std::string, bool>(
                                 database(),
-                                "SELECT helios_photograph.photograph_id, title, taken, location FROM helios_photograph "
+                                "SELECT helios_photograph.photograph_id, title, taken, location, "
+                                " (helios_photograph_starred.photograph_id IS NOT NULL) AS starred "
+                                "FROM helios_photograph "
                                 "LEFT OUTER JOIN helios_photograph_location "
                                 "ON helios_photograph.photograph_id = helios_photograph_location.photograph_id "
+                                "LEFT OUTER JOIN helios_photograph_starred "
+                                "ON helios_photograph.photograph_id = helios_photograph_starred.photograph_id "
                                 "WHERE helios_photograph.photograph_id = ? ",
                                 slide::row<int>::from_json<attr::id>(data)
-                                ).to_json<attr::id, attr::title, attr::taken, attr::location>();
+                                ).to_json<attr::id, attr::title, attr::taken, attr::location, attr::starred>();
                     }
                     )
                 )

@@ -112,6 +112,11 @@
     background-color: #222;
 }
 
+button.checked {
+    color: white;
+    background-color: #27db79;
+}
+
 .photograph-container img {
     max-width: 80%;
     max-height: 560px;

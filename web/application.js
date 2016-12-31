@@ -16,8 +16,7 @@ var AlbumCollection = Backbone.Collection.extend(
             comparator: 'name',
             url: '/api/album',
             add: function(model) {
-                console.log('add', model);
-                 return (this.any(function(model_) { console.log('test', model_); return model.id == model_.id })) ?
+                 return (this.any(function(model_) { return model.id == model_.id })) ?
                      false :
                      Backbone.Collection.prototype.add.apply(this, arguments);
             }
@@ -70,7 +69,8 @@ var Photograph = Backbone.Model.extend(
                 title: '',
                 caption: '',
                 location: '',
-                taken: ''
+                taken: '',
+                starred: false
             },
             url: function() {
                 return this.isNew() ? '/api/photograph' : ('/api/photograph/' + this.id);

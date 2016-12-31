@@ -23,6 +23,7 @@
                 <ul class="album-list" id="album-list"></ul>
             </div>
             <div id="photograph-column" class="col-3-4 photograph-list-container">
+                <button name="starred-only">Starred Only</button><br>
                 <ul class="photograph-list photograph-list-large" id="photograph-list"></ul>
             </div>
         </div>
@@ -75,12 +76,21 @@ $(document).ready(
                 el: $('#photograph-list'),
                 model: photographs,
                 view: ThumbnailView,
+                filter: function(model) {
+                    var starredOnly = $('button[name=starred-only]').hasClass('checked');
+                    return (!starredOnly || model.get('starred'));
+                },
                 initializeView: function(view) {
                     view.targetUrl = '/photograph.html#' + view.model.id + '.' + albumId;
                 }<!--,-->
                 <!--emptyView: StaticView.extend({-->
                     <!--template: 'Choose an album to view photographs.'-->
                 <!--}-->)
+            });
+            $('button[name=starred-only]').click(function() {
+                $('button[name=starred-only]').toggleClass('checked');
+                console.log('change');
+                photographsView.render();
             });
             (new CollectionView({
                     el: $('#album-list'),
