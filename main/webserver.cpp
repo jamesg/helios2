@@ -38,6 +38,7 @@ WEB_DECLARE_STATIC(web_modal_css)
 WEB_DECLARE_STATIC(web_modal_js)
 WEB_DECLARE_STATIC(web_photograph_html)
 WEB_DECLARE_STATIC(web_style_css)
+WEB_DECLARE_STATIC(web_tags_html)
 WEB_DECLARE_STATIC(web_teletype_theme_css)
 WEB_DECLARE_STATIC(web_underscore_js)
 WEB_DECLARE_STATIC(web_views_js)
@@ -569,6 +570,7 @@ namespace rd_server
         constexpr const char name[] = "name";
         constexpr const char tag[] = "tag";
         constexpr const char starred[] = "starred";
+        constexpr const char count[] = "count";
         constexpr const char id[] = "id";
 
         // Use photograph_id to differentiate from other ids in the same
@@ -649,6 +651,7 @@ int main(const int argc, char * const argv[])
     install_static_request_function("/modal.js", WEB_STATIC_STD_STRING(web_modal_js), "text/javascript");
     install_static_request_function("/photograph.html", WEB_STATIC_STD_STRING(web_photograph_html));
     install_static_request_function("/style.css", WEB_STATIC_STD_STRING(web_style_css), "text/css");
+    install_static_request_function("/tags.html", WEB_STATIC_STD_STRING(web_tags_html));
     install_static_request_function("/teletype-theme.css", WEB_STATIC_STD_STRING(web_teletype_theme_css), "text/css");
     install_static_request_function("/underscore.js", WEB_STATIC_STD_STRING(web_underscore_js), "text/javascript");
     install_static_request_function("/views.js", WEB_STATIC_STD_STRING(web_views_js), "text/javascript");
@@ -831,10 +834,10 @@ int main(const int argc, char * const argv[])
                                 " title, caption, location, taken, "
                                 " (helios_photograph_starred.photograph_id IS NOT NULL) AS starred "
                                 "FROM helios_photograph "
-                                "LEFT OUTER JOIN helios_photograph_location "
-                                "ON helios_photograph.photograph_id = helios_photograph_location.photograph_id "
                                 "JOIN helios_photograph_in_album "
                                 "ON helios_photograph.photograph_id = helios_photograph_in_album.photograph_id "
+                                "LEFT OUTER JOIN helios_photograph_location "
+                                "ON helios_photograph.photograph_id = helios_photograph_location.photograph_id "
                                 "LEFT OUTER JOIN helios_photograph_starred "
                                 "ON helios_photograph.photograph_id = helios_photograph_starred.photograph_id "
                                 "WHERE album_id = ?",
@@ -1080,6 +1083,52 @@ int main(const int argc, char * const argv[])
                             throw webserver::public_exception("Deleting photograph");
 
                         return "ok";
+                    }
+                    )
+                )
+            );
+    webserver::install_request_function(
+            webserver::request_function_ptr(
+                new webserver::text_request_function(
+                    "/api/tag",
+                    "GET",
+                    [](const std::string&, const std::string&)
+                    {
+                        return slide::get_collection<std::string, int>(
+                                database(),
+                                "SELECT tag, COUNT(photograph_id) "
+                                "FROM helios_photograph_tagged "
+                                "WHERE tag IS NOT NULL AND tag != '' "
+                                "GROUP BY helios_photograph_tagged.tag "
+                                ).to_json<attr::tag, attr::count>();
+                    }
+                    )
+                )
+            );
+    webserver::install_request_function(
+            webserver::request_function_ptr(
+                new webserver::text_request_function(
+                    "/api/tag_photograph",
+                    "GET",
+                    [](const std::string& param, const std::string&)
+                    {
+                        // TODO unescape
+                        std::string tag = param;
+                        return slide::get_collection<int, std::string, std::string, std::string, std::string, bool>(
+                                database(),
+                                "SELECT helios_photograph.photograph_id, "
+                                " title, caption, location, taken, "
+                                " (helios_photograph_starred.photograph_id IS NOT NULL) AS starred "
+                                "FROM helios_photograph "
+                                "JOIN helios_photograph_tagged "
+                                "LEFT OUTER JOIN helios_photograph_location "
+                                "ON helios_photograph.photograph_id = helios_photograph_location.photograph_id "
+                                "LEFT OUTER JOIN helios_photograph_starred "
+                                "ON helios_photograph.photograph_id = helios_photograph_starred.photograph_id "
+                                "WHERE tag LIKE ? "
+                                "AND helios_photograph.photograph_id = helios_photograph_tagged.photograph_id ",
+                                slide::row<std::string>::make_row(tag)
+                                ).to_json<attr::id, attr::title, attr::caption, attr::location, attr::taken, attr::starred>();
                     }
                     )
                 )

@@ -52,17 +52,6 @@ var AlbumFormView = StaticView.extend(
         }
         );
 
-var AlbumView = StaticView.extend(
-        {
-            tagName: 'li',
-            className: 'album',
-            template: '<span class="album-name"><%-name%></span>',
-            events: {
-                click: function() { this.trigger('click'); }
-            }
-        }
-        );
-
 var Photograph = Backbone.Model.extend(
         {
             defaults: {
@@ -90,6 +79,7 @@ var PhotographCollection = Backbone.Collection.extend(
 var Tag = Backbone.Model.extend(
         {
             defaults: {
+                count: '',
                 tag: ''
             }
         }
@@ -97,7 +87,8 @@ var Tag = Backbone.Model.extend(
 
 var TagCollection = Backbone.Collection.extend(
         {
-            model: Tag
+            model: Tag,
+            url: '/api/tag'
         }
         );
 

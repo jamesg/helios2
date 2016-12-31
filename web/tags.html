@@ -2,7 +2,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Photograph Album - Albums</title>
+        <title>Photograph Album - Tags</title>
         <link rel="stylesheet" href="grid.css">
         <link rel="stylesheet" href="modal.css">
         <link rel="stylesheet" href="style.css">
@@ -12,18 +12,14 @@
         <div id="modal-container"></div>
         <div class="grid">
             <!--<h1>Photograph Album</h1>-->
-            <div id="list-column" class="col-1-4">
+            <div id="list-column" class="col-4-4">
                 <div class="album-list-header">
                     <span class="back-link"><a href="index.html">Home</a></span>
-                    <h2>Albums</h2>
-                    <a href="#uncategorised">Uncategorised</a><br>
-                    <button name="new-album">Create Album</button>
+                    <h2>Tags</h2>
                 </div>
-                <button name="hide-expand" class="hide-expand-button">&lt;&gt;</button>
-                <ul class="album-list" id="album-list"></ul>
+                <ul class="tag-list" id="tag-list"></ul>
             </div>
-            <div id="photograph-column" class="col-3-4 photograph-list-container">
-                <button name="starred-only">Starred Only</button><br>
+            <div id="photograph-column" class="col-4-4 photograph-list-container">
                 <ul class="photograph-list photograph-list-large" id="photograph-list"></ul>
             </div>
         </div>
@@ -34,47 +30,17 @@
         <script src="modal.js"></script>
         <script src="application.js"></script>
         <script type="text/javascript">
-var AlbumView = StaticView.extend(
-        {
-            tagName: 'li',
-            className: 'album',
-            template: '<span class="album-name"><%-name%></span>',
-            events: {
-                click: function() { this.trigger('click'); }
-            }
-        }
-        );
-
 $(document).ready(
         function() {
-            $('button[name=hide-expand]').click(
-                function() {
-                    if($('#list-column').hasClass('col-1-4'))
-                    {
-                        $('#list-column').removeClass('col-1-4');
-                        $('#list-column').addClass('col-1-12');
-                        $('#photograph-column').removeClass('col-3-4');
-                        $('#photograph-column').addClass('col-11-12');
-                    }
-                    else
-                    {
-                        $('#list-column').removeClass('col-1-12');
-                        $('#list-column').addClass('col-1-4');
-                        $('#photograph-column').removeClass('col-11-12');
-                        $('#photograph-column').addClass('col-3-4');
-                    }
-                }
-                );
-            var albums = new AlbumCollection;
-            albums.fetch();
+            var tags = new TagCollection;
+            tags.fetch();
             var photographs = new PhotographCollection;
 
-            var albumId;
+            var tag;
 
             var hashChange = function() {
-                albumId = window.location.hash.substr(1);
-                // albumId may be an id or 'uncategorised'.
-                photographs.url = '/api/album_photograph/' + albumId;
+                tag = window.location.hash.substr(1);
+                photographs.url = '/api/tag_photograph/' + tag;
                 photographs.fetch();
             };
 
@@ -91,9 +57,9 @@ $(document).ready(
                     var starredOnly = $('button[name=starred-only]').hasClass('checked');
                     return (!starredOnly || model.get('starred'));
                 },
-                initializeView: function(view) {
-                    view.targetUrl = '/photograph.html#' + view.model.id + '.' + albumId;
-                }<!--,-->
+                <!--initializeView: function(view) {-->
+                    <!--view.targetUrl = '/photograph.html#' + view.model.id + '.' + albumId;-->
+                <!--},-->
                 <!--emptyView: StaticView.extend({-->
                     <!--template: 'Choose an album to view photographs.'-->
                 <!--}-->)
@@ -104,23 +70,26 @@ $(document).ready(
                 photographsView.render();
             });
             (new CollectionView({
-                    el: $('#album-list'),
-                    model: albums,
-                    view: AlbumView,
-                    initializeView: function(view) {
-                        view.on(
-                                'click',
-                                function() {
-                                    window.location.hash = '#' + this.model.id;
-                                    window.scrollTo(0, 0);
-                                    photographs.url = '/api/album_photograph/' + this.model.id;
-                                    photographs.fetch();
-                                }
-                                );
+                el: $('#tag-list'),
+                model: tags,
+                view: StaticView.extend({
+                    tagName: 'li',
+                    template: '<span class="album-name"><%-tag%></span> ' +
+                        '<span class="tag-count"><%-count%></span>',
+                    events: {
+                        click: function() { this.trigger('click'); }
                     }
+                }),
+                initializeView: function(view) {
+                    view.on(
+                        'click',
+                        function() {
+                            photographs.url = '/api/tag_photograph/' + this.model.get('tag');
+                            photographs.fetch();
+                        }
+                        );
                 }
-                )
-            ).render();
+            })).render();
 
             $('button[name=new-album]').click(
                     function() {

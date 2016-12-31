@@ -18,7 +18,7 @@
                 <div id="photograph-details"></div>
             </div>
             <div class="col-2-4">
-                <ul id="tag-list" class="tag-list"></ul>
+                <ul id="tag-list" class="album-list"></ul>
                 <form id="add-tag-form">
                     <input name="tag" type="text" autocomplete="off"></input>
                     <button type="submit">Add</button>
@@ -56,7 +56,6 @@ var PhotographDetailsView = StaticView.extend({
     events: {
         'click button[name=starred]': function() {
             this.$('button[name=starred]').toggleClass('checked');
-                console.log('starred', this.$('button[name=starred]').hasClass('checked'));
             this.model.save({
                 starred: this.$('button[name=starred]').hasClass('checked')
             }, { wait: true});

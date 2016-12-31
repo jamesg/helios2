@@ -15,7 +15,7 @@
     white-space: nowrap;
 }
 
-.album {
+.album-list li {
     cursor: pointer;
     margin-left: 0;
     padding: 0.6em;
@@ -32,6 +32,19 @@
     margin-right: 1em;
     padding-left: 1em;
     padding-right: 1em;
+}
+
+ul.tag-list {
+    -moz-column-count: auto;
+    -moz-column-width: 12em;
+    list-style-type: none;
+    padding-left: 0;
+    margin-bottom: 4em;
+}
+
+span.tag-count {
+    background-color: #27db79;
+    border-radius: 3px;
 }
 
 .photograph-list {
@@ -212,7 +225,8 @@ input[type=number], input[type=text], input[type=file], select {
 
 .tag-list li {
     border-bottom: 1px solid silver;
-    padding: 1em;
+    cursor: pointer;
+    padding: 0.1em;
     width: 100%;
 }
 
