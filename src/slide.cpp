@@ -210,7 +210,7 @@ void slide::detail::bind_value(std::string value, std::size_t index, sqlite3_stm
         "\" to index " << index << std::endl;
 #endif
     if(
-            sqlite3_bind_blob(
+            sqlite3_bind_text(
                 stmt,
                 static_cast<int>(index),
                 value.c_str(),
