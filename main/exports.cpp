@@ -172,7 +172,8 @@ int main(const int argc, char * const argv[])
                 "SELECT photograph_id, taken, title "
                 "FROM helios_photograph "
                 "NATURAL JOIN helios_photograph_in_album "
-                "WHERE album_id = ?",
+                "WHERE album_id = ? "
+                "ORDER BY taken",
                 slide::row<int>::make_row(album.get<0>())
                 );
 
