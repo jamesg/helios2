@@ -23,7 +23,10 @@ BASE_DEPS = $(patsubst %.cpp,%.d,$(patsubst %.c,%.d,${BASE_SRC}))
 WEB_RESOURCES := $(filter-out $(wildcard web/*.o),$(wildcard web/*))
 WEB_OBJS := $(patsubst web/%,web/%.o,${WEB_RESOURCES})
 
-all:	webserver slide
+all:	webserver exports slide
+
+exports:	main/exports.o ${BASE_OBJS} ${WEB_OBJS}
+	${C++} ${LD_FLAGS} -o $@ $+
 
 webserver:	main/webserver.o ${BASE_OBJS} ${WEB_OBJS}
 	${C++} ${LD_FLAGS} -o $@ $+
