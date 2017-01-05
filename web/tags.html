@@ -52,14 +52,37 @@ $(document).ready(
             var photographsView = new CollectionView({
                 el: $('#photograph-list'),
                 model: photographs,
-                view: ThumbnailView,
+                view: StaticView.extend({
+                    tagName: 'li',
+                    className: 'thumbnail',
+                    template: '<img src="/photograph/small/<%-id%>" alt="<%-title%>"></img><span class="vertical-align-helper"></span>',
+                    events: {
+                        click: function() {
+                            this.trigger('click')
+                        }
+                    }
+                }),
                 filter: function(model) {
                     var starredOnly = $('button[name=starred-only]').hasClass('checked');
                     return (!starredOnly || model.get('starred'));
                 },
-                <!--initializeView: function(view) {-->
-                    <!--view.targetUrl = '/photograph.html#' + view.model.id + '.' + albumId;-->
-                <!--},-->
+                initializeView: function(view) {
+                    view.on(
+                        'click',
+                        function() {
+                            new Modal({
+                                model: view.model,
+                                view: StaticView.extend({
+                                    template:
+                                        '<h1>Photograph</h1>' +
+                                        '<img src="/photograph/medium/<%-id%>" style="max-width: 400px" alt="<%-title%>"><br>' +
+                                        '<h2><%-title%></h2>' +
+                                        '<span class="date"><%-taken%></span>'
+                                })
+                            });
+                        }
+                        );
+                }
                 <!--emptyView: StaticView.extend({-->
                     <!--template: 'Choose an album to view photographs.'-->
                 <!--}-->)
