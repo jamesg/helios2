@@ -98,7 +98,7 @@ var PhotographFormView = StaticView.extend(
             template: '<h1>Photograph</h1>' +
                 '<form class="aligned-form">' +
                 '<label for="title">Title</label><input type="text" name="title" value="<%=title%>"></input><br>' +
-                '<label for="caption">Caption</label><input type="text" name="caption" value="<%=caption%>"></input><br>' +
+                '<label for="caption">Caption</label><textarea id="caption-textarea" name="caption" rows="4"><%=caption%></textarea><br>' +
                 '<label for="taken">Date</label><input type="text" name="taken" value="<%-taken%>"></input><br>' +
                 '<label for="location">Location</label><input type="text" name="location" value="<%-location%>"></input><br>' +
                 // TODO tags, albums

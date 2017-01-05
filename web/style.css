@@ -145,7 +145,7 @@ button.checked {
     color: #d7d7d7;
 }
 
-.photograph-container h1,h2 {
+.photograph-container h1, .photograph-container h2 {
     color: white;
 }
 
@@ -215,6 +215,14 @@ input[type=number], input[type=text], input[type=file], select {
     margin-bottom: 1em;
     padding: 0.5em;
     border-radius: 0.5em;
+}
+
+textarea#caption-textarea {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    border-radius: 0.5em;
+    width: 59%;
+    height: auto;
 }
 
 .tag-list {
