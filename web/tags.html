@@ -73,13 +73,30 @@ $(document).ready(
                             new Modal({
                                 model: view.model,
                                 view: StaticView.extend({
+                                    initialize: function() {
+                                        StaticView.prototype.initialize.apply(this, arguments);
+                                    },
                                     template:
                                         '<h1>Photograph</h1>' +
                                         '<img src="/photograph/medium/<%-id%>" style="max-width: 400px" alt="<%-title%>"><br>' +
                                         '<h2><%-title%></h2>' +
-                                        '<span class="date"><%-taken%></span>'
+                                        '<span class="date"><%-taken%></span>' +
+                                        '<ul id="album-list" class="album-list"></ul>'
                                 })
                             });
+                            // TODO: this should be part of the Modal.
+                                        var albums = new AlbumCollection;
+                                        (new CollectionView({
+                                            el: $('#album-list'),
+                                            model: albums,
+                                            view: StaticView.extend({
+                                                tagName: 'li',
+                                                template: '<a href="/albums.html#<%-id%>"><%-name%></a>'
+                                            })
+                                        })).render();
+                                        albums.fetch({
+                                            url: '/api/photograph_album/' + this.model.get('id')
+                                        });
                         }
                         );
                 }

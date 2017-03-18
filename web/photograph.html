@@ -39,60 +39,87 @@
         <script src="modal.js"></script>
         <script src="application.js"></script>
         <script type="text/javascript">
-var PhotographView = StaticView.extend({
-    template: '<div class="photograph">' +
-        '<img src="/photograph/medium/<%-id%>" alt="<%-title%>"></img>' +
-        '</div>',
-});
-
-var PhotographDetailsView = StaticView.extend({
-    template:
-        '<h2><%-title%></h2><button name="edit">Edit</button><br>' +
-        '<button name="starred" id="photograph-starred" class="<% if(starred) print("checked"); %>">Star</button><br>' +
-        '<span class="caption"><%-caption%></span><br>' +
-        '<span class="size-link">' +
-        '<a href="/photograph/original/<%-id%>">Full size</a>' +
-        '</span>',
-    events: {
-        'click button[name=starred]': function() {
-            this.$('button[name=starred]').toggleClass('checked');
-            this.model.save({
-                starred: this.$('button[name=starred]').hasClass('checked')
-            }, { wait: true});
-        },
-        'click button[name=edit]': function() {
-            (new Modal({
-                view: PhotographFormView,
-                model: this.model,
-                buttons: [
-                    StandardButton.cancel(),
-                    StandardButton.destroy(
-                        function() {
-                            new ConfirmModal(
-                                    {
-                                        message: 'Are you sure you want to delete this photograph?',
-                                        callback: (function() {
-                                            this.model.destroy();
-                                            this.remove();
-                                        }).bind(this)
-                                    }
-                                    );
-                        }
-                        ),
-                    StandardButton.save(
-                        function() {
-                            this.view.save();
-                            this.remove();
-                        }
-                        )
-                ]
-            }));
-        }
-    }
-});
-
 $(document).ready(
     function() {
+        var PhotographView = StaticView.extend({
+            template: '<div class="grid">' +
+                '<div class="col-strong-1-12">' +
+                '    <%if(index>0){%><span class="advance-link"><a href="#<%-prev%>.<%-album%>">&lt;</a></span><%}%>' +
+                '    <div class="vertical-align-helper"></div>' +
+                '</div>' +
+                '<div class="col-strong-10-12">' +
+                '    <div class="photograph">' +
+                '        <img src="/photograph/medium/<%-id%>" alt="<%-title%>"></img>' +
+                '    </div>' +
+                '</div>' +
+                '<div class="col-strong-1-12">' +
+                '    <%if(index<length-1){%><span class="advance-link"><a href="#<%-next%>.<%-album%>    ">&gt;</a></span><%}%>' +
+                '    <div class="vertical-align-helper"></div>' +
+                '</div>' +
+                '</div>',
+            templateParams: function() {
+                var searchId = this.model.id;
+                var index = albumPhotographs.findIndex(function(model) { return model.id == searchId; });
+                var length = albumPhotographs.length;
+                return _.extend(
+                        StaticView.prototype.templateParams.apply(this, arguments),
+                        {
+                            album: albumId,
+                            index: index,
+                            length: length,
+                            next: (index < length - 1) ? albumPhotographs.at(index + 1).id : 0,
+                            prev: (index > 0) ? albumPhotographs.at(index - 1).id : 0
+                        }
+                        );
+            }
+        });
+
+        var PhotographDetailsView = StaticView.extend({
+            template:
+                '<h2><%-title%></h2><button name="edit">Edit</button><br>' +
+                '<button name="starred" id="photograph-starred" class="<% if(starred) print("checked"); %>">Star</button><br>' +
+                '<span class="caption"><%-caption%></span><br>' +
+                '<span class="size-link">' +
+                '<a href="/photograph/original/<%-id%>">Full size</a>' +
+                '</span>',
+            events: {
+                'click button[name=starred]': function() {
+                    this.$('button[name=starred]').toggleClass('checked');
+                    this.model.save({
+                        starred: this.$('button[name=starred]').hasClass('checked')
+                    }, { wait: true});
+                },
+                'click button[name=edit]': function() {
+                    (new Modal({
+                        view: PhotographFormView,
+                        model: this.model,
+                        buttons: [
+                            StandardButton.cancel(),
+                            StandardButton.destroy(
+                                function() {
+                                    new ConfirmModal(
+                                            {
+                                                message: 'Are you sure you want to delete this photograph?',
+                                                callback: (function() {
+                                                    this.model.destroy();
+                                                    this.remove();
+                                                }).bind(this)
+                                            }
+                                            );
+                                }
+                                ),
+                            StandardButton.save(
+                                function() {
+                                    this.view.save();
+                                    this.remove();
+                                }
+                                )
+                        ]
+                    }));
+                }
+            }
+        });
+
         var photograph = new Photograph();
         var albumPhotographs = new PhotographCollection;
         var tags = new TagCollection;
@@ -136,6 +163,7 @@ $(document).ready(
             el: $('#photograph-view'),
             model: photograph
         });
+        photographView.listenTo(albumPhotographs, 'reset', photographView.render);
 
         var photographDetailsView = new PhotographDetailsView({
             el: $('#photograph-details'),
