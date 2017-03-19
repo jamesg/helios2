@@ -16,6 +16,7 @@ body {
 .grid {
     position: relative;
     width: auto;
+    background-color: inherit;
 }
 
 [class*='col-'] {
@@ -109,40 +110,5 @@ body {
     content: "";
     display: table;
     clear: both;
-}
-
-// Forms
-.control-group {
-}
-.control-group-title {
-    font-weight: bold;
-    border-bottom: 1px solid black;
-    margin-bottom: 0.25em;
-    display: block;
-}
-.control-radio input ~ span  ,  button {
-    font-family: Sans;
-    font-size: 11pt;
-    margin-bottom: 0.25em;
-    display: inline-block;
-    border: 1px solid black;
-    border-radius: 1em;
-    padding: 0.5em;
-    cursor: pointer;
-}
-.control-radio input {
-    display: none;
-}
-.control-radio input:not([disabled]):checked ~ span {
-    background-color: white;
-}
-
-.transformation-row {
-    border-bottom: 1px solid grey;
-    cursor: pointer;
-}
-
-.transformation-row:hover {
-    background-color: white;
 }
 

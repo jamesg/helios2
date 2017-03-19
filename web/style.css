@@ -4,25 +4,41 @@
     bottom: 1em;
 }
 
+.album-column {
+    background-color: inherit;
+}
+
 .album-list {
     list-style-type: none;
     padding-left: 0;
     margin-bottom: 4em;
+    background-color: inherit;
 }
 
-.album-list li span {
+.album-list li.album span.album-name {
     overflow: hidden;
     white-space: nowrap;
+    z-index: -1;
+    background-color: inherit;
+    padding: 0.5em;
+    padding-left: 0;
 }
 
-.album-list li {
+.album-list li.album span:hover {
+    z-index: 10;
+    overflow: visible;
+    position: relative;
+}
+
+.album-list li.album {
     cursor: pointer;
+    margin: 0;
     margin-left: 0;
-    padding: 0.6em;
-    width: 100%;
+    padding: 0.5em;
+    background-color: inherit;
 }
 
-.album:hover {
+li.album:hover {
     background-color: #c7c7c7;
 }
 
@@ -255,5 +271,31 @@ textarea#caption-textarea {
 .advance-link a {
     font-size: 22pt;
     color: white;
+}
+
+// Forms
+.control-group {
+}
+.control-group-title {
+    font-weight: bold;
+    border-bottom: 1px solid black;
+    margin-bottom: 0.25em;
+    display: block;
+}
+.control-radio input ~ span  ,  button {
+    font-family: Sans;
+    font-size: 11pt;
+    margin-bottom: 0.25em;
+    display: inline-block;
+    border: 1px solid black;
+    border-radius: 1em;
+    padding: 0.5em;
+    cursor: pointer;
+}
+.control-radio input {
+    display: none;
+}
+.control-radio input:not([disabled]):checked ~ span {
+    background-color: white;
 }
 
