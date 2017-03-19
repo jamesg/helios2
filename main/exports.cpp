@@ -9,9 +9,9 @@
 int main(const int argc, char * const argv[])
 {
     std::string album_name, db_file, output_dir;
-    bool fullsize = false, scaled = false;
+    bool fullsize = false, scaled = false, starred_only = false, no_dirs = false;
     int option;
-    while((option = getopt(argc, argv, "a:d:fo:s")) != -1)
+    while((option = getopt(argc, argv, "a:d:fo:stx")) != -1)
     {
         switch(option)
         {
@@ -32,6 +32,12 @@ int main(const int argc, char * const argv[])
                 break;
             case 's':
                 scaled = true;
+                break;
+            case 't':
+                starred_only = true;
+                break;
+            case 'x':
+                no_dirs = true;
                 break;
         }
     }
@@ -155,7 +161,68 @@ int main(const int argc, char * const argv[])
         }
     };
 
-    auto export_album = [&database, &export_photograph, output_dir](
+    auto export_collection = [&export_photograph](
+            const slide::collection<int, std::string, std::string>& photographs,
+            const std::string dir
+            )
+    {
+        if(mkdir(dir.c_str(), 0755) != 0 && errno != EEXIST)
+            throw std::runtime_error(
+                    slide::mkstr() << "creating directory " << dir
+                    );
+
+        //std::string last_taken;
+        //int index = 0;
+        for(const slide::row<int, std::string, std::string> photograph : photographs)
+        {
+            std::cerr << "Photograph " << photograph.get<2>() << " taken " <<
+                photograph.get<1>() << std::endl;
+
+            const std::string taken = photograph.get<1>().length() ?
+                std::string(photograph.get<1>(), 0, 10) : "unknown";
+
+            //if(taken == last_taken)
+                //++index;
+            //else
+                //index = 1;
+
+            //last_taken = taken;
+
+            const std::string filename = slide::mkstr() <<
+                dir << '/' << taken << std::setfill('0') << '_' <<
+                std::setw(6) << photograph.get<0>() << ".jpg";
+
+            export_photograph(photograph.get<0>(), filename);
+        }
+    };
+
+    auto export_all = [&database, &export_collection, output_dir, starred_only]()
+    {
+        if(starred_only)
+            export_collection(
+                slide::get_collection<int, std::string, std::string>(
+                    database,
+                    "SELECT photograph_id, taken, title "
+                    "FROM helios_photograph "
+                    "NATURAL JOIN helios_photograph_starred "
+                    "ORDER BY taken"
+                    ),
+                    output_dir
+                );
+        else
+            export_collection(
+                slide::get_collection<int, std::string, std::string>(
+                    database,
+                    "SELECT photograph_id, taken, title "
+                    "FROM helios_photograph "
+                    "ORDER BY taken"
+                    ),
+                    output_dir
+                );
+
+    };
+
+    auto export_album = [&database, &export_collection, output_dir, starred_only](
             const slide::row<int, std::string> album
             )
     {
@@ -166,43 +233,38 @@ int main(const int argc, char * const argv[])
                     slide::mkstr() << "creating directory " << directory
                     );
 
-        slide::collection<int, std::string, std::string> photographs =
-            slide::get_collection<int, std::string, std::string>(
-                database,
-                "SELECT photograph_id, taken, title "
-                "FROM helios_photograph "
-                "NATURAL JOIN helios_photograph_in_album "
-                "WHERE album_id = ? "
-                "ORDER BY taken",
-                slide::row<int>::make_row(album.get<0>())
+        if(starred_only)
+            export_collection(
+                slide::get_collection<int, std::string, std::string>(
+                    database,
+                    "SELECT photograph_id, taken, title "
+                    "FROM helios_photograph "
+                    "NATURAL JOIN helios_photograph_in_album "
+                    "NATURAL JOIN helios_photograph_starred "
+                    "WHERE album_id = ? "
+                    "ORDER BY taken",
+                    slide::row<int>::make_row(album.get<0>())
+                    ),
+                    directory
                 );
-
-        std::string last_taken;
-        int index = 0;
-        for(const slide::row<int, std::string, std::string> photograph : photographs)
-        {
-            std::cerr << "Photograph " << photograph.get<2>() << " taken " <<
-                photograph.get<1>() << std::endl;
-
-            const std::string taken = photograph.get<1>().length() ?
-                std::string(photograph.get<1>(), 0, 10) : "unknown";
-
-            if(taken == last_taken)
-                ++index;
-            else
-                index = 1;
-
-            last_taken = taken;
-
-            const std::string filename = slide::mkstr() <<
-                directory << '/' << taken << std::setfill('0') << '_' <<
-                std::setw(4) << index << ".jpg";
-
-            export_photograph(photograph.get<0>(), filename);
-        }
+        else
+            export_collection(
+                slide::get_collection<int, std::string, std::string>(
+                    database,
+                    "SELECT photograph_id, taken, title "
+                    "FROM helios_photograph "
+                    "NATURAL JOIN helios_photograph_in_album "
+                    "WHERE album_id = ? "
+                    "ORDER BY taken",
+                    slide::row<int>::make_row(album.get<0>())
+                    ),
+                    directory
+                );
     };
 
-    if(album_name.empty())
+    if(no_dirs)
+        export_all();
+    else if(album_name.empty())
     {
         // Export all the albums.
         slide::collection<int, std::string> albums =
