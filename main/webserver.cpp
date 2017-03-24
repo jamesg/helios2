@@ -975,7 +975,10 @@ int main(const int argc, char * const argv[])
                     [](const std::string& /*param*/, const std::string& data)
                     {
                         // TODO param should match id in JSON
-                        slide::devoid(
+                        slide::transaction tr(database(), "putphotograph");
+                        try
+                        {
+                            slide::devoid(
                                 "UPDATE helios_photograph SET title = ?, "
                                 "caption = ?, "
                                 "taken = ? "
@@ -984,29 +987,49 @@ int main(const int argc, char * const argv[])
                                     ::from_json<attr::title, attr::caption, attr::taken, attr::id>(data),
                                 database()
                                 );
-                        slide::devoid(
+                        }
+                        catch(const slide::exception&)
+                        {
+                            throw webserver::public_exception("Updating basic photograph details.");
+                        }
+                        try
+                        {
+                            slide::devoid(
                                 "UPDATE helios_photograph_location SET location = ? "
                                 "WHERE photograph_id = ?",
                                 slide::row<std::string, int>
                                     ::from_json<attr::location, attr::id>(data),
                                 database()
                                 );
-                        const slide::row<bool> starred =
-                            slide::row<bool>::from_json<attr::starred>(data);
-                        if(starred.get<0>())
-                            slide::devoid(
-                                    "INSERT INTO helios_photograph_starred(photograph_id) "
+                        }
+                        catch(const slide::exception&)
+                        {
+                            throw webserver::public_exception("Updating photograph location.");
+                        }
+                        try
+                        {
+                            const slide::row<bool> starred =
+                                slide::row<bool>::from_json<attr::starred>(data);
+                            if(starred.get<0>())
+                                slide::devoid(
+                                    "INSERT OR REPLACE INTO helios_photograph_starred(photograph_id) "
                                     "VALUES(?)",
                                     slide::row<int>::from_json<attr::id>(data),
                                     database()
                                     );
-                        else
-                            slide::devoid(
+                            else
+                                slide::devoid(
                                     "DELETE FROM helios_photograph_starred "
                                     "WHERE photograph_id = ?",
                                     slide::row<int>::from_json<attr::id>(data),
                                     database()
                                     );
+                        }
+                        catch(const slide::exception&)
+                        {
+                            throw webserver::public_exception("Updating photograph starred.");
+                        }
+                        tr.commit();
                         return slide::get_row<int, std::string, std::string, std::string, bool>(
                                 database(),
                                 "SELECT helios_photograph.photograph_id, title, taken, location, "
