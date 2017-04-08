@@ -9,9 +9,9 @@
 int main(const int argc, char * const argv[])
 {
     std::string album_name, db_file, output_dir;
-    bool fullsize = false, scaled = false, starred_only = false, no_dirs = false;
+    bool fullsize = false, scaled = false, starred_only = false, in_albums = false, in_months = false;
     int option;
-    while((option = getopt(argc, argv, "a:d:fo:stx")) != -1)
+    while((option = getopt(argc, argv, "a:d:fo:stA:stM")) != -1)
     {
         switch(option)
         {
@@ -36,8 +36,11 @@ int main(const int argc, char * const argv[])
             case 't':
                 starred_only = true;
                 break;
-            case 'x':
-                no_dirs = true;
+            case 'A':
+                in_albums = true;
+                break;
+            case 'M':
+                in_months = true;
                 break;
         }
     }
@@ -48,6 +51,11 @@ int main(const int argc, char * const argv[])
     if(!(fullsize ^ scaled))
         throw std::runtime_error(
                 "one of -f (fullsize) and -s (scaled) must be provided"
+                );
+
+    if(in_albums && in_months)
+        throw std::runtime_error(
+                "only one of -A (in albums) and -M (in months) can be provided"
                 );
 
     slide::connection database(db_file);
@@ -262,29 +270,76 @@ int main(const int argc, char * const argv[])
                 );
     };
 
-    if(no_dirs)
-        export_all();
-    else if(album_name.empty())
+    if(in_albums)
     {
-        // Export all the albums.
-        slide::collection<int, std::string> albums =
-            slide::get_collection<int, std::string>(
-                database,
-                "SELECT album_id, name FROM helios_album"
-                );
-        for(const slide::row<int, std::string> album : albums)
+        if(album_name.empty())
+        {
+            // Export all the albums.
+            slide::collection<int, std::string> albums =
+                slide::get_collection<int, std::string>(
+                    database,
+                    "SELECT album_id, name FROM helios_album"
+                    );
+            for(const slide::row<int, std::string> album : albums)
+                export_album(album);
+        }
+        else
+        {
+            // Export just one album.
+            slide::row<int, std::string> album = slide::get_row<int, std::string>(
+                    database,
+                    "SELECT album_id, name FROM helios_album "
+                    "WHERE name LIKE ? ",
+                    slide::row<std::string>::make_row(album_name)
+                    );
             export_album(album);
+        }
+    }
+    else if(in_months)
+    {
+        slide::collection<std::string> months = slide::get_collection<std::string>(
+                database,
+                "SELECT substr(taken, 1, 7) AS month FROM helios_photograph "
+                "WHERE month != '' "
+                "GROUP BY month "
+                "ORDER BY month"
+                );
+        for(slide::row<std::string> month : months)
+        {
+            std::cerr << "exporting month " << month.get<0>() << std::endl;
+            std::string directory = slide::mkstr() << output_dir << '/' << month.get<0>();
+            if(mkdir(directory.c_str(), 0755) != 0 && errno != EEXIST)
+                throw std::runtime_error(
+                    slide::mkstr() << "creating directory " << directory
+                    );
+            if(starred_only)
+                export_collection(
+                    slide::get_collection<int, std::string, std::string>(
+                        database,
+                        "SELECT photograph_id, taken, title, substr(taken, 1, 7) AS month  "
+                        "FROM helios_photograph "
+                        "NATURAL JOIN helios_photograph_starred "
+                        "WHERE month = ? "
+                        "ORDER BY taken",
+                        slide::row<std::string>::make_row(month.get<0>())
+                        ),
+                        directory
+                    );
+            else
+                export_collection(
+                    slide::get_collection<int, std::string, std::string>(
+                        database,
+                        "SELECT photograph_id, taken, title, substr(taken, 1, 7) AS month "
+                        "FROM helios_photograph "
+                        "WHERE month = ? "
+                        "ORDER BY taken",
+                        slide::row<std::string>::make_row(month.get<0>())
+                        ),
+                        directory
+                    );
+        }
     }
     else
-    {
-        // Export just one album.
-        slide::row<int, std::string> album = slide::get_row<int, std::string>(
-                database,
-                "SELECT album_id, name FROM helios_album "
-                "WHERE name LIKE ? ",
-                slide::row<std::string>::make_row(album_name)
-                );
-        export_album(album);
-    }
+        export_all();
 }
 
