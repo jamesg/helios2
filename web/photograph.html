@@ -12,7 +12,7 @@
         <div id="modal-container"></div>
         <div class="grid">
             <div class="col-4-4 photograph-container">
-                <span class="back-link"><a href="albums.html" id="back-a">Back to album</a></span>
+                <span class="back-link"><a href="" id="back-a">Back</a></span>
                 <div id="photograph-view"></div>
                 <ul class="photograph-list photograph-list-small" id="photograph-list"></ul>
                 <div id="photograph-details"></div>
@@ -44,7 +44,7 @@ $(document).ready(
         var PhotographView = StaticView.extend({
             template: '<div class="grid">' +
                 '<div class="col-strong-1-12">' +
-                '    <%if(index>0){%><span class="advance-link"><a href="#<%-prev%>.<%-album%>">&lt;</a></span><%}%>' +
+                '    <%if(index>0){%><span class="advance-link"><a href="<%-prev%>">&lt;</a></span><%}%>' +
                 '    <div class="vertical-align-helper"></div>' +
                 '</div>' +
                 '<div class="col-strong-10-12">' +
@@ -53,7 +53,7 @@ $(document).ready(
                 '    </div>' +
                 '</div>' +
                 '<div class="col-strong-1-12">' +
-                '    <%if(index<length-1){%><span class="advance-link"><a href="#<%-next%>.<%-album%>    ">&gt;</a></span><%}%>' +
+                '    <%if(index<length-1){%><span class="advance-link"><a href="<%-next%>">&gt;</a></span><%}%>' +
                 '    <div class="vertical-align-helper"></div>' +
                 '</div>' +
                 '</div>',
@@ -61,14 +61,15 @@ $(document).ready(
                 var searchId = this.model.id;
                 var index = albumPhotographs.findIndex(function(model) { return model.id == searchId; });
                 var length = albumPhotographs.length;
+                var nextId = (index < length - 1) ? albumPhotographs.at(index + 1).id : 0;
+                var prevId = (index > 0) ? albumPhotographs.at(index - 1).id : 0;
                 return _.extend(
                         StaticView.prototype.templateParams.apply(this, arguments),
                         {
-                            album: albumId,
                             index: index,
                             length: length,
-                            next: (index < length - 1) ? albumPhotographs.at(index + 1).id : 0,
-                            prev: (index > 0) ? albumPhotographs.at(index - 1).id : 0
+                            next: nextId > 0 ? photographInCollectionUrl(collectionType, nextId, collectionId) : '',
+                            prev: prevId > 0 ? photographInCollectionUrl(collectionType, prevId, collectionId) : ''
                         }
                         );
             }
@@ -127,15 +128,27 @@ $(document).ready(
         allAlbums.fetch();
         var photographAlbums = new AlbumCollection;
 
-        var photographId, albumId;
+        var photographId, collectionId, collectionType;
 
         var hashChange = function() {
             var params = window.location.hash.substr(1).split('.');
             photographId = params[0];
-            albumId = coalesce(params[1], 'uncategorised');
+            collectionType = coalesce(params[1], 'inalbum');
+            collectionId = coalesce(params[2], 'uncategorised');
             photograph.set('id', photographId);
             photograph.fetch();
-            albumPhotographs.url = '/api/album_photograph/' + albumId;
+            switch(collectionType) {
+                case 'inalbum':
+                    albumPhotographs.url = '/api/album_photograph/' + params[2];
+                    $('#back-a').attr('href', '/albums.html#' + params[2]);
+                    $('#back-a').text('Back to Album');
+                    break;
+                case 'inmonth':
+                    albumPhotographs.url = '/api/month/' + params[2];
+                    $('#back-a').attr('href', '/months.html#' + params[2]);
+                    $('#back-a').text('Back to Month');
+                    break;
+            }
             albumPhotographs.fetch({ reset: true });
             tags.url = '/api/photograph_tag/' + photograph.id;
             tags.fetch({ reset: true });
@@ -146,7 +159,7 @@ $(document).ready(
         hashChange();
         window.onhashchange = hashChange;
 
-        (new CollectionView({
+        var albumsView = new CollectionView({
             el: $('#album-select'),
             model: allAlbums,
             view: StaticView.extend({
@@ -156,9 +169,9 @@ $(document).ready(
                 },
                 template: '<%-name%>'
             })
-        })).render();
+        });
+        albumsView.render();
 
-        $('#back-a').attr('href', '/albums.html#' + albumId);
         var photographView = new PhotographView({
             el: $('#photograph-view'),
             model: photograph
@@ -175,7 +188,14 @@ $(document).ready(
             el: $('#photograph-list'),
             model: albumPhotographs,
             initializeView: function(view) {
-                view.targetUrl = '/photograph.html#' + view.model.id + '.' + albumId;
+                switch(collectionType) {
+                    case 'inalbum':
+                        view.targetUrl = photographInAlbumUrl(view.model.id, collectionId);
+                        break;
+                    case 'inmonth':
+                        view.targetUrl = photographInMonthUrl(view.model.id, collectionId);
+                        break;
+                }
             },
             filter: function(model) {
                 var middleIndex = _.findIndex(
@@ -187,7 +207,7 @@ $(document).ready(
             }
         })).render();
 
-        (new CollectionView({
+        var tagsView = new CollectionView({
             el: $('#tag-list'),
             model: tags,
             view: StaticView.extend({
@@ -200,7 +220,8 @@ $(document).ready(
                     }
                 }
             })
-        })).render();
+        });
+        tagsView.render();
         $('#add-tag-form').submit(
                 function(event) {
                     event.preventDefault();
@@ -209,13 +230,14 @@ $(document).ready(
                         <!--return;-->
                     tags.add({ tag: tag });
                     tags.sync('update', tags);
+                    tagsView.render();
                     <!--tags.fetch();-->
                     $('input[name=tag]').val('');
                     $('input[name=tag]').focus();
                 }
                 );
 
-        (new CollectionView({
+        var photographAlbumsView = new CollectionView({
             el: $('#album-list'),
             model: photographAlbums,
             view: StaticView.extend({
@@ -228,7 +250,8 @@ $(document).ready(
                     }
                 }
             })
-        })).render();
+        });
+        photographAlbumsView.render();
         $('#add-album-form').submit(
                 function(event) {
                     event.preventDefault();
@@ -236,6 +259,7 @@ $(document).ready(
                     var album = allAlbums.find(function(model) { return model.id == albumId; });
                     photographAlbums.add(album);
                     photographAlbums.sync('update', photographAlbums);
+                    photographAlbumsView.render();
                 }
                 );
     }

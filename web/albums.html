@@ -19,7 +19,7 @@
                     <a href="#uncategorised">Uncategorised</a><br>
                     <button name="new-album">Create Album</button>
                 </div>
-                <button name="hide-expand" class="hide-expand-button">&lt;&gt;</button>
+                <!--<button name="hide-expand" class="hide-expand-button">&lt;&gt;</button>-->
                 <ul class="album-list" id="album-list"></ul>
             </div>
             <div id="photograph-column" class="col-4-5 photograph-list-container">
@@ -92,7 +92,7 @@ $(document).ready(
                     return (!starredOnly || model.get('starred'));
                 },
                 initializeView: function(view) {
-                    view.targetUrl = '/photograph.html#' + view.model.id + '.' + albumId;
+                    view.targetUrl = photographInAlbumUrl(view.model.id, albumId);
                 }<!--,-->
                 <!--emptyView: StaticView.extend({-->
                     <!--template: 'Choose an album to view photographs.'-->

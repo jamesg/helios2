@@ -36,6 +36,7 @@ WEB_DECLARE_STATIC(web_index_html)
 WEB_DECLARE_STATIC(web_jquery_js)
 WEB_DECLARE_STATIC(web_modal_css)
 WEB_DECLARE_STATIC(web_modal_js)
+WEB_DECLARE_STATIC(web_months_html)
 WEB_DECLARE_STATIC(web_photograph_html)
 WEB_DECLARE_STATIC(web_style_css)
 WEB_DECLARE_STATIC(web_tags_html)
@@ -510,7 +511,7 @@ namespace
                     MHD_add_response_header(
                             response,
                             "Location",
-                            (slide::mkstr() << "/photograph.html#" << photograph_id).str().c_str()
+                            (slide::mkstr() << "/photograph.html#" << photograph_id << ".inalbum.uncategorised").str().c_str()
                             );
                     int ret = MHD_queue_response(connection, 303, response);
                     MHD_destroy_response(response);
@@ -572,6 +573,9 @@ namespace rd_server
         constexpr const char starred[] = "starred";
         constexpr const char count[] = "count";
         constexpr const char id[] = "id";
+        constexpr const char year[] = "year";
+        constexpr const char month[] = "month";
+        constexpr const char photograph_count[] = "photograph_count";
 
         // Use photograph_id to differentiate from other ids in the same
         // object.
@@ -649,6 +653,7 @@ int main(const int argc, char * const argv[])
     install_static_request_function("/jquery.js", WEB_STATIC_STD_STRING(web_jquery_js), "text/javascript");
     install_static_request_function("/modal.css", WEB_STATIC_STD_STRING(web_modal_css), "text/css");
     install_static_request_function("/modal.js", WEB_STATIC_STD_STRING(web_modal_js), "text/javascript");
+    install_static_request_function("/months.html", WEB_STATIC_STD_STRING(web_months_html));
     install_static_request_function("/photograph.html", WEB_STATIC_STD_STRING(web_photograph_html));
     install_static_request_function("/style.css", WEB_STATIC_STD_STRING(web_style_css), "text/css");
     install_static_request_function("/tags.html", WEB_STATIC_STD_STRING(web_tags_html));
@@ -1158,6 +1163,80 @@ int main(const int argc, char * const argv[])
             );
     webserver::install_request_function(
             webserver::request_function_ptr(new upload_function)
+            );
+    webserver::install_request_function(
+            webserver::request_function_ptr(
+                new webserver::text_request_function(
+                    "/api/year",
+                    "GET",
+                    [](const std::string& param, const std::string&)
+                    {
+                        if(param == "")
+                        {
+                            return slide::get_collection<int, int>(
+                                    database(),
+                                    "SELECT "
+                                    "CAST(substr(taken, 1, 4) AS INTEGER) AS year, "
+                                    "count(photograph_id) AS photograph_count "
+                                    "FROM helios_photograph "
+                                    "WHERE year != 0 "
+                                    "GROUP BY year "
+                                    "ORDER BY year"
+                                    ).to_json<attr::year, attr::photograph_count>();
+                            }
+                            else
+                            {
+                                return slide::get_collection<int, int, int>(
+                                        database(),
+                                        "SELECT "
+                                        "CAST(substr(taken, 1, 4) AS INTEGER) AS year, "
+                                        "CAST(substr(taken, 6, 2) AS INTEGER) AS month, "
+                                        "count(photograph_id) AS photograph_count "
+                                        "FROM helios_photograph "
+                                        "WHERE year == ? "
+                                        "GROUP BY year, month "
+                                        "ORDER BY year, month",
+                                        slide::row<std::string>::make_row(param)
+                                        ).to_json<attr::year, attr::month, attr::photograph_count>();
+                            }
+                    }
+                    )
+                )
+            );
+    webserver::install_request_function(
+            webserver::request_function_ptr(
+                new webserver::text_request_function(
+                    "/api/month",
+                    "GET",
+                    [](const std::string& param, const std::string&)
+                    {
+                        if(param == "")
+                        {
+                            return slide::get_collection<int, int, int>(
+                                    database(),
+                                    "SELECT "
+                                    "CAST(substr(taken, 1, 4) AS INTEGER) AS year, "
+                                    "CAST(substr(taken, 6, 2) AS INTEGER) AS month, "
+                                    "count(photograph_id) AS photograph_count "
+                                    "FROM helios_photograph "
+                                    "WHERE year != 0 "
+                                    "GROUP BY year, month "
+                                    "ORDER BY year, month"
+                                    ).to_json<attr::year, attr::month, attr::photograph_count>();
+                        }
+                        else
+                        {
+                            return slide::get_collection<int, std::string>(
+                                database(),
+                                "SELECT photograph_id, title FROM helios_photograph "
+                                "WHERE substr(taken, 1, 7) = ? "
+                                "ORDER BY taken",
+                                slide::row<std::string>::make_row(param)
+                                ).to_json<attr::id, attr::title>();
+                        }
+                    }
+                    )
+                )
             );
 
     webserver::start_server(port);

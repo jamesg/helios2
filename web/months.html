@@ -1,0 +1,195 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Photograph Album - Months</title>
+        <link rel="stylesheet" href="grid.css">
+        <link rel="stylesheet" href="modal.css">
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="teletype-theme.css">
+    </head>
+    <body>
+        <div id="modal-container"></div>
+        <div class="grid">
+            <!--<h1>Photograph Album</h1>-->
+            <div id="list-column" class="col-1-5 album-column">
+                <div class="album-list-header">
+                    <span class="back-link"><a href="index.html">Home</a></span>
+                    <h2>Months</h2>
+                </div>
+                <!--<button name="hide-expand" class="hide-expand-button">&lt;&gt;</button>-->
+                <div id="year-list"></div>
+            </div>
+            <div id="photograph-column" class="col-4-5 photograph-list-container">
+                <ul class="photograph-list photograph-list-large" id="photograph-list"></ul>
+            </div>
+        </div>
+        <script src="jquery.js"></script>
+        <script src="underscore.js"></script>
+        <script src="backbone.js"></script>
+        <script src="views.js"></script>
+        <script src="modal.js"></script>
+        <script src="application.js"></script>
+        <script type="text/javascript">
+var monthNames = [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+var months, photographs;
+
+var Year = Backbone.Model.extend(
+        {
+            defaults: {
+                year: ''
+            }
+        }
+        );
+
+var Month = Backbone.Model.extend(
+        {
+            defaults: {
+                year: '',
+                month: ''
+            }
+        }
+        );
+
+var YearView = StaticView.extend(
+        {
+            tagName: 'div',
+            className: 'year',
+            template: '<h2><%-year%></h2><ul class="album-list"></ul>',
+            render: function() {},
+            initialize: function() {
+                StaticView.prototype.initialize.apply(this, arguments);
+                StaticView.prototype.render.apply(this);
+                var year = this.model.get('year');
+                var monthsView = new CollectionView(
+                        {
+                            model: months,
+                            view: MonthView,
+                            filter: function(model) {
+                                return model.get('year') == year;
+                            },
+                            initializeView: function(view) {
+                                var year = view.model.get('year');
+                                view.on(
+                                    'click',
+                                    function() {
+                                        var fm = year + '-' + ('0' + this.model.get('month')).slice(-2);
+                                        window.location.hash = '#' + fm;
+                                        window.scrollTo(0, 0);
+                                        //photographs.url = '/api/month/' + fm;
+                                        //photographs.fetch();
+                                    }
+                                    );
+                            },
+                            el: this.$('ul')
+                        }
+                        );
+                monthsView.render();
+            }
+        }
+        );
+
+var MonthView = StaticView.extend(
+        {
+            tagName: 'li',
+            className: 'album',
+            template: '<span class="album-name"><%-monthName%></span>',
+            templateParams: function() {
+                return {
+                    year: this.model.get('year'),
+                    monthName: monthNames[this.model.get('month') - 1]
+                };
+            },
+            events: {
+                click: function() { this.trigger('click'); }
+            }
+        }
+        );
+
+var MonthCollection = Backbone.Collection.extend(
+        {
+            model: Month,
+            url: '/api/month'
+        }
+        );
+
+var YearCollection = Backbone.Collection.extend(
+        {
+            model: Year,
+            url: '/api/year',
+            comparator: function(model) {
+                return - parseInt(model.get('year'));
+            }
+        }
+        );
+
+$(document).ready(
+        function() {
+            $('button[name=hide-expand]').click(
+                function() {
+                    if($('#list-column').hasClass('col-1-4'))
+                    {
+                        $('#list-column').removeClass('col-1-4');
+                        $('#list-column').addClass('col-1-12');
+                        $('#photograph-column').removeClass('col-3-4');
+                        $('#photograph-column').addClass('col-11-12');
+                    }
+                    else
+                    {
+                        $('#list-column').removeClass('col-1-12');
+                        $('#list-column').addClass('col-1-4');
+                        $('#photograph-column').removeClass('col-11-12');
+                        $('#photograph-column').addClass('col-3-4');
+                    }
+                }
+                );
+            months = new MonthCollection;
+            months.fetch();
+
+            var years = new YearCollection;
+            years.fetch();
+            photographs = new PhotographCollection;
+
+            var fullMonth;
+
+            var hashChange = function() {
+                fullMonth = window.location.hash.substr(1);
+                photographs.url = '/api/month/' + fullMonth;
+                photographs.fetch();
+            };
+
+            window.onhashchange = hashChange;
+
+            if(window.location.hash)
+                hashChange();
+
+            var photographsView = new CollectionView({
+                el: $('#photograph-list'),
+                model: photographs,
+                view: ThumbnailView,
+                initializeView: function(view) {
+                    view.targetUrl = photographInMonthUrl(view.model.id, fullMonth);
+                }<!--,-->
+                <!--emptyView: StaticView.extend({-->
+                    <!--template: 'Choose an album to view photographs.'-->
+                <!--}-->)
+            });
+            $('button[name=starred-only]').click(function() {
+                $('button[name=starred-only]').toggleClass('checked');
+                console.log('change');
+                photographsView.render();
+            });
+            (new CollectionView({
+                    el: $('#year-list'),
+                    model: years,
+                    view: YearView
+                }
+                )
+            ).render();
+        }
+        );
+        </script>
+    </body>
+</html>
+

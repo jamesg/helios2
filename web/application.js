@@ -147,3 +147,20 @@ var ThumbnailView = StaticView.extend(
         }
         );
 
+var photographInAlbumUrl = function(photographId, albumId) {
+    return 'photograph.html#' + photographId + '.inalbum.' + albumId;
+};
+
+var photographInMonthUrl = function(photographId, fullMonth) {
+    return 'photograph.html#' + photographId + '.inmonth.' + fullMonth;
+};
+
+var photographInCollectionUrl = function(collectionType, photographId, collectionId) {
+    switch(collectionType) {
+        case 'inalbum':
+            return photographInAlbumUrl(photographId, collectionId);
+        case 'inmonth':
+            return photographInMonthUrl(photographId, collectionId);
+    }
+};
+

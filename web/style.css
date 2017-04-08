@@ -11,7 +11,7 @@
 .album-list {
     list-style-type: none;
     padding-left: 0;
-    margin-bottom: 4em;
+    /*margin-bottom: 4em;*/
     background-color: inherit;
 }
 
@@ -121,7 +121,15 @@ span.tag-count {
 }
 
 .album-list-header {
-    padding: 1em;
+    padding: 0.5em;
+}
+
+.year h2 {
+    padding-left: 0.3em;
+}
+
+.year {
+    vertical-align: top;
 }
 
 .photograph-list li:hover {

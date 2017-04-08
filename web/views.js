@@ -59,9 +59,21 @@ var CollectionView = Backbone.View.extend(
             this._rendered = false;
             this._views = [];
             this.model.each(this.add, this);
-            this.listenTo(this.model, 'add', this.add);
+            this.render();
+            this.listenTo(this.model, 'add', this.add);//function() {
+                //console.log('add event');
+                //this.render();
+            //});
             this.listenTo(this.model, 'remove', this.remove);
             this.listenTo(this.model, 'reset', this.reset);
+            this.listenTo(
+                    this.model,
+                    'sync',
+                    (function() {
+                        console.log('sync', this.model.length);
+                        this.render();
+                    }).bind(this)
+                    );
         },
         add: function(model, options) {
             var view = this.constructView(model);
@@ -77,7 +89,7 @@ var CollectionView = Backbone.View.extend(
 
             this._views.splice(pos, 0, view);
 
-            this.render();
+            //this.render();
             this.trigger('add');
         },
         remove: function(model) {
@@ -92,6 +104,7 @@ var CollectionView = Backbone.View.extend(
                 )[0];
         },
         reset: function() {
+            console.log('reset model');
             this._views = [];
             this._rendered = false;
             this.model.each(
@@ -126,7 +139,7 @@ var CollectionView = Backbone.View.extend(
             // TODO reuse old models, both for performance and to enable
             // editable views.
             this._rendered = true;
-            this.$el.empty();
+            var container = document.createDocumentFragment();
 
             var filtered = _.filter(
                     this._views,
@@ -147,7 +160,7 @@ var CollectionView = Backbone.View.extend(
                     this._emptyView = new this.emptyView;
                     this._emptyView.render();
                 }
-                this.$el.append(this._emptyView.el);
+                container.appendChild(this._emptyView.el);
             } else {
                 if(_.has(this, '_emptyView')) {
                     this._emptyView.$el.remove();
@@ -155,11 +168,15 @@ var CollectionView = Backbone.View.extend(
                 }
                 _(views).each(
                     function(dv) {
-                        this.$el.append(dv.el);
+                        container.appendChild(dv.el);
                     },
                     this
                     );
             }
+
+            this.$el.empty();
+            this.$el.append(container);
+
             // Rendering the CollectionView in this way removes
             // every element from the DOM and reinserts it
             // somewhere else.  Event bindings are lost.
